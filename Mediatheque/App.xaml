@@ -1,0 +1,12 @@
+﻿<Application x:Class="Mediatheque.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:Mediatheque"
+             StartupUri="MainWindow.xaml">
+    <Application.Resources>
+        <local:BoolToBackgroundConverter x:Key="BoolToBackgroundConverter"/>
+        <local:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+        <local:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
+        <local:InverseNullToVisibilityConverter x:Key="InverseNullToVisibilityConverter"/>
+    </Application.Resources>
+</Application>

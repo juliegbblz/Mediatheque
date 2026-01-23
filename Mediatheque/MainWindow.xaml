@@ -1,0 +1,539 @@
+﻿<Window x:Class="Mediatheque.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Mediatheque"
+        mc:Ignorable="d"
+        Title="Médiathèque" Height="650" Width="1400"
+        Closed="Window_Closed">
+    <DockPanel Margin="6">
+        <StackPanel Orientation="Horizontal" DockPanel.Dock="Top" HorizontalAlignment="Right">
+            <Button Content="Enregistrer" Command="{Binding EnregistrerCommand}" Margin="4" Padding="8,4"/>
+            <Button Content="Semaine précédente" Command="{Binding SemainePrecedenteCommand}" Margin="4" Padding="8,4"/>
+            <TextBlock Text="{Binding SemaineAffichee}" VerticalAlignment="Center" Margin="8,4" FontWeight="Bold"/>
+            <Button Content="Semaine suivante" Command="{Binding SemaineSuivanteCommand}" Margin="4" Padding="8,4"/>
+            <Button Content="Aujourd'hui" Command="{Binding AujourdhuiCommand}" Margin="4" Padding="8,4"/>
+        </StackPanel>
+
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="2.5*"/>
+                <ColumnDefinition Width="2*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Colonne gauche : Emploi du temps hebdomadaire -->
+            <Border Grid.Column="0" Margin="8" BorderBrush="Gray" BorderThickness="1">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Margin="-1,-1,1,-49">
+                    <Grid Margin="4">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <!-- En-tête jours -->
+                            <RowDefinition Height="*"/>
+                            <!-- Grille horaire -->
+                        </Grid.RowDefinitions>
+
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="60"/>
+                            <!-- Colonne heures -->
+                            <ColumnDefinition Width="*"/>
+                            <!-- Lundi -->
+                            <ColumnDefinition Width="*"/>
+                            <!-- Mardi -->
+                            <ColumnDefinition Width="*"/>
+                            <!-- Mercredi -->
+                            <ColumnDefinition Width="*"/>
+                            <!-- Jeudi -->
+                            <ColumnDefinition Width="*"/>
+                            <!-- Vendredi -->
+                            <ColumnDefinition Width="*"/>
+                            <!-- Samedi -->
+                            <ColumnDefinition Width="*"/>
+                            <!-- Dimanche -->
+                        </Grid.ColumnDefinitions>
+
+                        <!-- En-têtes des jours -->
+                        <Border Grid.Row="0" Grid.Column="0" Background="LightGray" BorderBrush="Gray" BorderThickness="0,0,1,1" Padding="4">
+                            <TextBlock Text="Heure" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+
+                        <Border Grid.Row="0" Grid.Column="1" 
+                                Background="{Binding EstAujourdhuiLundi, Converter={StaticResource BoolToBackgroundConverter}, ConverterParameter=semaine}" 
+                                BorderBrush="Gray" BorderThickness="0,0,1,1" Padding="4">
+                            <StackPanel HorizontalAlignment="Center">
+                                <TextBlock Text="Lundi" FontWeight="Bold" HorizontalAlignment="Center"/>
+                                <TextBlock Text="{Binding DateLundi, StringFormat=dd/MM}" HorizontalAlignment="Center" FontSize="10"/>
+                                <TextBlock Text="● AUJOURD'HUI" 
+                                           FontWeight="Bold" 
+                                           FontSize="9" 
+                                           Foreground="DarkOrange"
+                                           HorizontalAlignment="Center"
+                                           Visibility="{Binding EstAujourdhuiLundi, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Grid.Row="0" Grid.Column="2" 
+                                Background="{Binding EstAujourdhuiMardi, Converter={StaticResource BoolToBackgroundConverter}, ConverterParameter=semaine}" 
+                                BorderBrush="Gray" BorderThickness="0,0,1,1" Padding="4">
+                            <StackPanel HorizontalAlignment="Center">
+                                <TextBlock Text="Mardi" FontWeight="Bold" HorizontalAlignment="Center"/>
+                                <TextBlock Text="{Binding DateMardi, StringFormat=dd/MM}" HorizontalAlignment="Center" FontSize="10"/>
+                                <TextBlock Text="● AUJOURD'HUI" 
+                                           FontWeight="Bold" 
+                                           FontSize="9" 
+                                           Foreground="DarkOrange"
+                                           HorizontalAlignment="Center"
+                                           Visibility="{Binding EstAujourdhuiMardi, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Grid.Row="0" Grid.Column="3" 
+                                Background="{Binding EstAujourdhuiMercredi, Converter={StaticResource BoolToBackgroundConverter}, ConverterParameter=semaine}" 
+                                BorderBrush="Gray" BorderThickness="0,0,1,1" Padding="4">
+                            <StackPanel HorizontalAlignment="Center">
+                                <TextBlock Text="Mercredi" FontWeight="Bold" HorizontalAlignment="Center"/>
+                                <TextBlock Text="{Binding DateMercredi, StringFormat=dd/MM}" HorizontalAlignment="Center" FontSize="10"/>
+                                <TextBlock Text="● AUJOURD'HUI" 
+                                           FontWeight="Bold" 
+                                           FontSize="9" 
+                                           Foreground="DarkOrange"
+                                           HorizontalAlignment="Center"
+                                           Visibility="{Binding EstAujourdhuiMercredi, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Grid.Row="0" Grid.Column="4" 
+                                Background="{Binding EstAujourdhuiJeudi, Converter={StaticResource BoolToBackgroundConverter}, ConverterParameter=semaine}" 
+                                BorderBrush="Gray" BorderThickness="0,0,1,1" Padding="4">
+                            <StackPanel HorizontalAlignment="Center">
+                                <TextBlock Text="Jeudi" FontWeight="Bold" HorizontalAlignment="Center"/>
+                                <TextBlock Text="{Binding DateJeudi, StringFormat=dd/MM}" HorizontalAlignment="Center" FontSize="10"/>
+                                <TextBlock Text="● AUJOURD'HUI" 
+                                           FontWeight="Bold" 
+                                           FontSize="9" 
+                                           Foreground="DarkOrange"
+                                           HorizontalAlignment="Center"
+                                           Visibility="{Binding EstAujourdhuiJeudi, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Grid.Row="0" Grid.Column="5" 
+                                Background="{Binding EstAujourdhuiVendredi, Converter={StaticResource BoolToBackgroundConverter}, ConverterParameter=semaine}" 
+                                BorderBrush="Gray" BorderThickness="0,0,1,1" Padding="4">
+                            <StackPanel HorizontalAlignment="Center">
+                                <TextBlock Text="Vendredi" FontWeight="Bold" HorizontalAlignment="Center"/>
+                                <TextBlock Text="{Binding DateVendredi, StringFormat=dd/MM}" HorizontalAlignment="Center" FontSize="10"/>
+                                <TextBlock Text="● AUJOURD'HUI" 
+                                           FontWeight="Bold" 
+                                           FontSize="9" 
+                                           Foreground="DarkOrange"
+                                           HorizontalAlignment="Center"
+                                           Visibility="{Binding EstAujourdhuiVendredi, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Grid.Row="0" Grid.Column="6" 
+                                Background="{Binding EstAujourdhuiSamedi, Converter={StaticResource BoolToBackgroundConverter}, ConverterParameter=weekend}" 
+                                BorderBrush="Gray" BorderThickness="0,0,1,1" Padding="4">
+                            <StackPanel HorizontalAlignment="Center">
+                                <TextBlock Text="Samedi" FontWeight="Bold" HorizontalAlignment="Center"/>
+                                <TextBlock Text="{Binding DateSamedi, StringFormat=dd/MM}" HorizontalAlignment="Center" FontSize="10"/>
+                                <TextBlock Text="● AUJOURD'HUI" 
+                                           FontWeight="Bold" 
+                                           FontSize="9" 
+                                           Foreground="DarkOrange"
+                                           HorizontalAlignment="Center"
+                                           Visibility="{Binding EstAujourdhuiSamedi, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Grid.Row="0" Grid.Column="7" 
+                                Background="{Binding EstAujourdhuiDimanche, Converter={StaticResource BoolToBackgroundConverter}, ConverterParameter=weekend}" 
+                                BorderBrush="Gray" BorderThickness="0,0,1,1" Padding="4">
+                            <StackPanel HorizontalAlignment="Center">
+                                <TextBlock Text="Dimanche" FontWeight="Bold" HorizontalAlignment="Center"/>
+                                <TextBlock Text="{Binding DateDimanche, StringFormat=dd/MM}" HorizontalAlignment="Center" FontSize="10"/>
+                                <TextBlock Text="● AUJOURD'HUI" 
+                                           FontWeight="Bold" 
+                                           FontSize="9" 
+                                           Foreground="DarkOrange"
+                                           HorizontalAlignment="Center"
+                                           Visibility="{Binding EstAujourdhuiDimanche, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Grille horaire avec les créneaux -->
+                        <Grid Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="8">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="60"/>
+                                <!-- 08:00 -->
+                                <RowDefinition Height="60"/>
+                                <!-- 09:00 -->
+                                <RowDefinition Height="60"/>
+                                <!-- 10:00 -->
+                                <RowDefinition Height="60"/>
+                                <!-- 11:00 -->
+                                <RowDefinition Height="60"/>
+                                <!-- 12:00 -->
+                                <RowDefinition Height="60"/>
+                                <!-- 13:00 -->
+                                <RowDefinition Height="60"/>
+                                <!-- 14:00 -->
+                                <RowDefinition Height="60"/>
+                                <!-- 15:00 -->
+                                <RowDefinition Height="60"/>
+                                <RowDefinition Height="60"/>
+                                <!-- 16:00 -->
+                                <RowDefinition Height="60"/>
+                                <!-- 17:00 -->
+                                <RowDefinition Height="60"/>
+                                <!-- 18:00 -->
+                                <RowDefinition Height="60"/>
+                                <!-- 19:00 -->
+                                <RowDefinition Height="60"/>
+                                <!-- 20:00 -->
+                                <RowDefinition Height="60"/>
+                                <!-- 21:00 -->
+                                <RowDefinition Height="60"/>
+                                <!-- 22:00 -->
+                            </Grid.RowDefinitions>
+
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="60"/>
+                                <!-- Colonne heures -->
+                                <ColumnDefinition Width="*"/>
+                                <!-- Lundi -->
+                                <ColumnDefinition Width="*"/>
+                                <!-- Mardi -->
+                                <ColumnDefinition Width="*"/>
+                                <!-- Mercredi -->
+                                <ColumnDefinition Width="*"/>
+                                <!-- Jeudi -->
+                                <ColumnDefinition Width="*"/>
+                                <!-- Vendredi -->
+                                <ColumnDefinition Width="*"/>
+                                <!-- Samedi -->
+                                <ColumnDefinition Width="*"/>
+                                <!-- Dimanche -->
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Étiquettes d'heures et lignes de séparation -->
+                            <Border Grid.Row="0" Grid.Column="0" BorderBrush="LightGray" BorderThickness="0,0,1,1" Padding="4">
+                                <TextBlock Text="08:00" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="11"/>
+                            </Border>
+                            <Border Grid.Row="1" Grid.Column="0" BorderBrush="LightGray" BorderThickness="0,0,1,1" Padding="4">
+                                <TextBlock Text="09:00" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="11"/>
+                            </Border>
+                            <Border Grid.Row="2" Grid.Column="0" BorderBrush="LightGray" BorderThickness="0,0,1,1" Padding="4">
+                                <TextBlock Text="10:00" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="11"/>
+                            </Border>
+                            <Border Grid.Row="3" Grid.Column="0" BorderBrush="LightGray" BorderThickness="0,0,1,1" Padding="4">
+                                <TextBlock Text="11:00" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="11"/>
+                            </Border>
+                            <Border Grid.Row="4" Grid.Column="0" BorderBrush="LightGray" BorderThickness="0,0,1,1" Padding="4">
+                                <TextBlock Text="12:00" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="11"/>
+                            </Border>
+                            <Border Grid.Row="5" Grid.Column="0" BorderBrush="LightGray" BorderThickness="0,0,1,1" Padding="4">
+                                <TextBlock Text="13:00" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="11"/>
+                            </Border>
+                            <Border Grid.Row="6" Grid.Column="0" BorderBrush="LightGray" BorderThickness="0,0,1,1" Padding="4">
+                                <TextBlock Text="14:00" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="11"/>
+                            </Border>
+                            <Border Grid.Row="7" Grid.Column="0" BorderBrush="LightGray" BorderThickness="0,0,1,1" Padding="4">
+                                <TextBlock Text="15:00" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="11"/>
+                            </Border>
+                            <Border Grid.Row="8" Grid.Column="0" BorderBrush="LightGray" BorderThickness="0,0,1,1" Padding="4">
+                                <TextBlock Text="16:00" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="11"/>
+                            </Border>
+                            <Border Grid.Row="9" Grid.Column="0" BorderBrush="LightGray" BorderThickness="0,0,1,1" Padding="4">
+                                <TextBlock Text="17:00" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="11"/>
+                            </Border>
+                            <Border Grid.Row="10" Grid.Column="0" BorderBrush="LightGray" BorderThickness="0,0,1,1" Padding="4">
+                                <TextBlock Text="18:00" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="11"/>
+                            </Border>
+                            <Border Grid.Row="11" Grid.Column="0" BorderBrush="LightGray" BorderThickness="0,0,1,1" Padding="4">
+                                <TextBlock Text="19:00" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="11"/>
+                            </Border>
+                            <Border Grid.Row="12" Grid.Column="0" BorderBrush="LightGray" BorderThickness="0,0,1,1" Padding="4">
+                                <TextBlock Text="20:00" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="11"/>
+                            </Border>
+                            <Border Grid.Row="13" Grid.Column="0" BorderBrush="LightGray" BorderThickness="0,0,1,1" Padding="4">
+                                <TextBlock Text="21:00" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="11"/>
+                            </Border>
+                            <Border Grid.Row="14" Grid.Column="0" BorderBrush="LightGray" BorderThickness="0,0,1,1" Padding="4">
+                                <TextBlock Text="22:00" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="11"/>
+                            </Border>
+
+                            <!-- Cases des jours avec bordures -->
+                            <ItemsControl Grid.Row="0" Grid.RowSpan="15" Grid.Column="1" Grid.ColumnSpan="7">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                        </Grid>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <Border Grid.Column="0" BorderBrush="LightGray" BorderThickness="0,0,1,0" Background="White"/>
+                                <Border Grid.Column="1" BorderBrush="LightGray" BorderThickness="0,0,1,0" Background="White"/>
+                                <Border Grid.Column="2" BorderBrush="LightGray" BorderThickness="0,0,1,0" Background="White"/>
+                                <Border Grid.Column="3" BorderBrush="LightGray" BorderThickness="0,0,1,0" Background="White"/>
+                                <Border Grid.Column="4" BorderBrush="LightGray" BorderThickness="0,0,1,0" Background="White"/>
+                                <Border Grid.Column="5" BorderBrush="LightGray" BorderThickness="0,0,1,0" Background="LightYellow"/>
+                                <Border Grid.Column="6" BorderBrush="LightGray" BorderThickness="0,0,1,0" Background="LightYellow"/>
+                            </ItemsControl>
+
+                            <!-- Lignes horaires horizontales -->
+                            <Rectangle Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="7" Height="1" VerticalAlignment="Bottom" Fill="LightGray"/>
+                            <Rectangle Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="7" Height="1" VerticalAlignment="Bottom" Fill="LightGray"/>
+                            <Rectangle Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="7" Height="1" VerticalAlignment="Bottom" Fill="LightGray"/>
+                            <Rectangle Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="7" Height="1" VerticalAlignment="Bottom" Fill="LightGray"/>
+                            <Rectangle Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="7" Height="1" VerticalAlignment="Bottom" Fill="LightGray"/>
+                            <Rectangle Grid.Row="5" Grid.Column="1" Grid.ColumnSpan="7" Height="1" VerticalAlignment="Bottom" Fill="LightGray"/>
+                            <Rectangle Grid.Row="6" Grid.Column="1" Grid.ColumnSpan="7" Height="1" VerticalAlignment="Bottom" Fill="LightGray"/>
+                            <Rectangle Grid.Row="7" Grid.Column="1" Grid.ColumnSpan="7" Height="1" VerticalAlignment="Bottom" Fill="LightGray"/>
+                            <Rectangle Grid.Row="8" Grid.Column="1" Grid.ColumnSpan="7" Height="1" VerticalAlignment="Bottom" Fill="LightGray"/>
+                            <Rectangle Grid.Row="9" Grid.Column="1" Grid.ColumnSpan="7" Height="1" VerticalAlignment="Bottom" Fill="LightGray"/>
+                            <Rectangle Grid.Row="10" Grid.Column="1" Grid.ColumnSpan="7" Height="1" VerticalAlignment="Bottom" Fill="LightGray"/>
+                            <Rectangle Grid.Row="11" Grid.Column="1" Grid.ColumnSpan="7" Height="1" VerticalAlignment="Bottom" Fill="LightGray"/>
+                            <Rectangle Grid.Row="12" Grid.Column="1" Grid.ColumnSpan="7" Height="1" VerticalAlignment="Bottom" Fill="LightGray"/>
+                            <Rectangle Grid.Row="13" Grid.Column="1" Grid.ColumnSpan="7" Height="1" VerticalAlignment="Bottom" Fill="LightGray"/>
+                            <Rectangle Grid.Row="14" Grid.Column="1" Grid.ColumnSpan="7" Height="1" VerticalAlignment="Bottom" Fill="LightGray"/>
+
+                            <!-- Entraînements de la semaine -->
+                            <ItemsControl Grid.Row="0" Grid.RowSpan="15" Grid.Column="1" Grid.ColumnSpan="7" 
+                                          ItemsSource="{Binding EntrainementsSemaine}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <Canvas/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemContainerStyle>
+                                    <Style>
+                                        <Setter Property="Canvas.Left" Value="{Binding PositionX}"/>
+                                        <Setter Property="Canvas.Top" Value="{Binding PositionY}"/>
+                                    </Style>
+                                </ItemsControl.ItemContainerStyle>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Background="#FF4A90E2" 
+                                                BorderBrush="DarkBlue" 
+                                                BorderThickness="2" 
+                                                CornerRadius="4"
+                                                Width="{Binding Largeur}"
+                                                Height="{Binding Hauteur}"
+                                                Margin="2"
+                                                Cursor="Hand">
+                                            <Border.InputBindings>
+                                                <MouseBinding MouseAction="LeftClick" 
+                                                              Command="{Binding DataContext.SelectionnerEntrainementCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                              CommandParameter="{Binding}"/>
+                                            </Border.InputBindings>
+                                            <StackPanel Margin="4">
+                                                <TextBlock Text="{Binding Activite}" 
+                                                           FontWeight="Bold" 
+                                                           FontSize="11" 
+                                                           Foreground="White"
+                                                           TextWrapping="Wrap"/>
+                                                <TextBlock Text="{Binding DateHeure, StringFormat=HH:mm}" 
+                                                           FontSize="10" 
+                                                           Foreground="White"/>
+                                                <TextBlock Text="{Binding Lieu}" 
+                                                           FontSize="9" 
+                                                           Foreground="WhiteSmoke"
+                                                           TextWrapping="Wrap"/>
+                                            </StackPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </Grid>
+                    </Grid>
+                </ScrollViewer>
+            </Border>
+
+            <!-- Colonne droite : Formulaire d'ajout/modification -->
+            <Border Grid.Column="1" Margin="8" BorderBrush="Gray" BorderThickness="1" Background="#FFF5F5F5">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="12">
+                        <TextBlock Text="Gestion des entraînements" 
+                                   FontSize="18" 
+                                   FontWeight="Bold" 
+                                   Margin="0,0,0,16"/>
+
+                        <Button Content="➕ Nouvel entraînement" 
+                                Command="{Binding AjouterEntrainementCommand}"
+                                Background="#FF4CAF50"
+                                Foreground="White"
+                                Padding="12,8"
+                                Margin="0,0,0,16"
+                                FontWeight="Bold"
+                                BorderThickness="0"
+                                Cursor="Hand"/>
+
+                        <!-- Formulaire visible uniquement si un entraînement est sélectionné -->
+                        <StackPanel Visibility="{Binding SelectionEntrainement, Converter={StaticResource NullToVisibilityConverter}}">
+                            <TextBlock Text="Détails de l'entraînement" 
+                                       FontSize="14" 
+                                       FontWeight="SemiBold" 
+                                       Margin="0,0,0,12"/>
+
+                            <!-- Date -->
+                            <TextBlock Text="Date (jj/mm/aa) :" 
+                                       FontWeight="SemiBold" 
+                                       Margin="0,0,0,4"/>
+                            <DatePicker SelectedDate="{Binding SelectionEntrainement.DateHeure, Mode=TwoWay}"
+                                        Margin="0,0,0,12"
+                                        Padding="8,6"/>
+
+                            <!-- Type d'entraînement -->
+                            <TextBlock Text="Type d'entraînement :" 
+                                       FontWeight="SemiBold" 
+                                       Margin="0,0,0,4"/>
+                            <ComboBox Text="{Binding SelectionEntrainement.Activite, Mode=TwoWay}"
+                                      IsEditable="True"
+                                      Margin="0,0,0,12"
+                                      Padding="8,6">
+                                <ComboBoxItem Content="Football"/>
+                                <ComboBoxItem Content="Tennis"/>
+                                <ComboBoxItem Content="Basketball"/>
+                                <ComboBoxItem Content="Natation"/>
+                                <ComboBoxItem Content="Volleyball"/>
+                                <ComboBoxItem Content="Athlétisme"/>
+                                <ComboBoxItem Content="Gymnastique"/>
+                                <ComboBoxItem Content="Danse"/>
+                                <ComboBoxItem Content="Yoga"/>
+                                <ComboBoxItem Content="Musculation"/>
+                            </ComboBox>
+
+                            <!-- Horaire de début -->
+                            <TextBlock Text="Heure de début :" 
+                                       FontWeight="SemiBold" 
+                                       Margin="0,0,0,4"/>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                                <ComboBox x:Name="HeureDebut"
+                                          Width="70"
+                                          Padding="8,6"
+                                          SelectionChanged="HeureDebut_SelectionChanged">
+                                    <ComboBoxItem Content="06" Tag="6"/>
+                                    <ComboBoxItem Content="07" Tag="7"/>
+                                    <ComboBoxItem Content="08" Tag="8"/>
+                                    <ComboBoxItem Content="09" Tag="9"/>
+                                    <ComboBoxItem Content="10" Tag="10"/>
+                                    <ComboBoxItem Content="11" Tag="11"/>
+                                    <ComboBoxItem Content="12" Tag="12"/>
+                                    <ComboBoxItem Content="13" Tag="13"/>
+                                    <ComboBoxItem Content="14" Tag="14"/>
+                                    <ComboBoxItem Content="15" Tag="15"/>
+                                    <ComboBoxItem Content="16" Tag="16"/>
+                                    <ComboBoxItem Content="17" Tag="17"/>
+                                    <ComboBoxItem Content="18" Tag="18" IsSelected="True"/>
+                                    <ComboBoxItem Content="19" Tag="19"/>
+                                    <ComboBoxItem Content="20" Tag="20"/>
+                                    <ComboBoxItem Content="21" Tag="21"/>
+                                    <ComboBoxItem Content="22" Tag="22"/>
+                                </ComboBox>
+                                <TextBlock Text="h" 
+                                           VerticalAlignment="Center" 
+                                           Margin="4,0"/>
+                                <ComboBox x:Name="MinuteDebut"
+                                          Width="70"
+                                          Padding="8,6"
+                                          SelectionChanged="MinuteDebut_SelectionChanged">
+                                    <ComboBoxItem Content="00" Tag="0" IsSelected="True"/>
+                                    <ComboBoxItem Content="15" Tag="15"/>
+                                    <ComboBoxItem Content="30" Tag="30"/>
+                                    <ComboBoxItem Content="45" Tag="45"/>
+                                </ComboBox>
+                            </StackPanel>
+
+                            <!-- Durée -->
+                            <TextBlock Text="Durée (minutes) :" 
+                                       FontWeight="SemiBold" 
+                                       Margin="0,0,0,4"/>
+                            <ComboBox SelectedValue="{Binding SelectionEntrainement.DureeMinutes, Mode=TwoWay}"
+                                      SelectedValuePath="Tag"
+                                      Margin="0,0,0,12"
+                                      Padding="8,6">
+                                <ComboBoxItem Content="30 minutes" Tag="30"/>
+                                <ComboBoxItem Content="45 minutes" Tag="45"/>
+                                <ComboBoxItem Content="1 heure (60 min)" Tag="60"/>
+                                <ComboBoxItem Content="1h30 (90 min)" Tag="90" IsSelected="True"/>
+                                <ComboBoxItem Content="2 heures (120 min)" Tag="120"/>
+                                <ComboBoxItem Content="2h30 (150 min)" Tag="150"/>
+                                <ComboBoxItem Content="3 heures (180 min)" Tag="180"/>
+                            </ComboBox>
+
+                            <!-- Lieu -->
+                            <TextBlock Text="Lieu :" 
+                                       FontWeight="SemiBold" 
+                                       Margin="0,0,0,4"/>
+                            <ComboBox Text="{Binding SelectionEntrainement.Lieu, Mode=TwoWay}"
+                                      IsEditable="True"
+                                      Margin="0,0,0,16"
+                                      Padding="8,6">
+                                <ComboBoxItem Content="Gymnase principal"/>
+                                <ComboBoxItem Content="Stade municipal"/>
+                                <ComboBoxItem Content="Piscine olympique"/>
+                                <ComboBoxItem Content="Court de tennis"/>
+                                <ComboBoxItem Content="Salle polyvalente"/>
+                                <ComboBoxItem Content="Terrain extérieur"/>
+                            </ComboBox>
+
+                            <!-- Boutons d'action -->
+                            <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                <Button Content="+ Ajouter" 
+                                     Command="{Binding ValiderAjoutCommand}"
+                                       Background="green"
+                                        Foreground="White"
+                                        Padding="12,8"
+                                        Margin="0,0,8,0"
+                                        BorderThickness="0"
+                                        Cursor="Hand"/>
+                                <Button Content="🗑️ Supprimer" 
+                                        Command="{Binding SupprimerEntrainementCommand}"
+                                        Background="#FFF44336"
+                                        Foreground="White"
+                                        Padding="12,8"
+                                        Margin="0,0,8,0"
+                                        BorderThickness="0"
+                                        Cursor="Hand"/>
+
+                                <Button Content="⬆️ +1h" 
+                                        Command="{Binding DeplacerEntrainementPlusTotCommand}"
+                                        Background="#FF2196F3"
+                                        Foreground="White"
+                                        Padding="12,8"
+                                        Margin="0,0,8,0"
+                                        BorderThickness="0"
+                                        Cursor="Hand"/>
+
+                                <Button Content="⬇️ -1h" 
+                                        Command="{Binding DeplacerEntrainementPlusTardCommand}"
+                                        Background="#FF2196F3"
+                                        Foreground="White"
+                                        Padding="12,8"
+                                        BorderThickness="0"
+                                        Cursor="Hand"/>
+                            </StackPanel>
+                        </StackPanel>
+
+                        <!-- Message si aucun entraînement n'est sélectionné -->
+                        <TextBlock Text="Sélectionnez un entraînement dans le calendrier ou créez-en un nouveau."
+                                   TextWrapping="Wrap"
+                                   Foreground="Gray"
+                                   Margin="0,20,0,0"
+                                   Visibility="{Binding SelectionEntrainement, Converter={StaticResource InverseNullToVisibilityConverter}}"/>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+        </Grid>
+    </DockPanel>
+</Window>

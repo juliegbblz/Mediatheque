@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="Mediatheque.Data/Mediatheque.Data.csproj" />
+  <Project Path="Mediatheque.ViewModel/Mediatheque.ViewModel.csproj" />
+  <Project Path="Mediatheque/Mediatheque.csproj" />
+</Solution>
