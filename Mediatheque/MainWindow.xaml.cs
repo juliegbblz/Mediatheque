@@ -81,7 +81,7 @@ namespace Mediatheque
 
         public void AlerteDepassementMinuit()
         {
-            MessageBox.Show("L'entraînement dépasse minuit.", "Alerte", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show("Les entraînements ne peuvent pas dépasser minuit.", "Alerte", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
 
         public void AlerteAvantHeureDebut()
