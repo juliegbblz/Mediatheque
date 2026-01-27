@@ -8,9 +8,11 @@ using System.Linq;
 
 namespace Mediatheque
 {
-    /// Logique d'interaction pour la fenêtre principale
-    /// Gère l'initialisation DB, les dialogues UI et la synchronisation des contrôles de saisie
-  
+
+    /// <summary>
+    /// Logique d'interaction de la fenêtre principale. 
+    /// Assure le pont entre le ViewModel et les contrôles WPF spécifiques.
+    /// </summary>
     public partial class MainWindow : Window, IMainView
     {
         private MainViewModel _vm;
