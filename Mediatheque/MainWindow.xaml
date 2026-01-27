@@ -7,9 +7,10 @@
         mc:Ignorable="d"
         Title="Médiathèque" Height="650" Width="1400"
         Closed="Window_Closed">
+    
+    
     <DockPanel Margin="6">
         <StackPanel Orientation="Horizontal" DockPanel.Dock="Top" HorizontalAlignment="Right">
-            <Button Content="Enregistrer" Command="{Binding EnregistrerCommand}" Margin="4" Padding="8,4"/>
             <Button Content="Semaine précédente" Command="{Binding SemainePrecedenteCommand}" Margin="4" Padding="8,4"/>
             <TextBlock Text="{Binding SemaineAffichee}" VerticalAlignment="Center" Margin="8,4" FontWeight="Bold"/>
             <Button Content="Semaine suivante" Command="{Binding SemaineSuivanteCommand}" Margin="4" Padding="8,4"/>
@@ -163,7 +164,9 @@
                         </Border>
 
                         <!-- Grille horaire avec les créneaux -->
-                        <Grid Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="8">
+                        <Grid Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="8"
+                              x:Name="PlanningGrid"
+                              SizeChanged="PlanningGrid_SizeChanged">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="60"/>
                                 <!-- 08:00 -->
@@ -308,8 +311,10 @@
                             <Rectangle Grid.Row="14" Grid.Column="1" Grid.ColumnSpan="7" Height="1" VerticalAlignment="Bottom" Fill="LightGray"/>
 
                             <!-- Entraînements de la semaine -->
-                            <ItemsControl Grid.Row="0" Grid.RowSpan="15" Grid.Column="1" Grid.ColumnSpan="7" 
-                                          ItemsSource="{Binding EntrainementsSemaine}">
+                            <ItemsControl x:Name="PlanningItemsControl"
+                                          Grid.Row="0" Grid.RowSpan="15" Grid.Column="1" Grid.ColumnSpan="7" 
+                                          ItemsSource="{Binding EntrainementsSemaine}"
+                                          SizeChanged="PlanningItemsControl_SizeChanged">
                                 <ItemsControl.ItemsPanel>
                                     <ItemsPanelTemplate>
                                         <Canvas/>
@@ -323,7 +328,8 @@
                                 </ItemsControl.ItemContainerStyle>
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
-                                        <Border Background="#FF4A90E2" 
+                                        <Border x:Name="BorderEntrainement"
+                                                Background="#FF4A90E2" 
                                                 BorderBrush="DarkBlue" 
                                                 BorderThickness="2" 
                                                 CornerRadius="4"
@@ -331,6 +337,8 @@
                                                 Height="{Binding Hauteur}"
                                                 Margin="2"
                                                 Cursor="Hand">
+
+
                                             <Border.InputBindings>
                                                 <MouseBinding MouseAction="LeftClick" 
                                                               Command="{Binding DataContext.SelectionnerEntrainementCommand, RelativeSource={RelativeSource AncestorType=Window}}"
@@ -489,6 +497,16 @@
 
                             <!-- Boutons d'action -->
                             <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                <Button Content="✅ OK" 
+                                        Command="{Binding TerminerEditionCommand}"
+                                        Background="#FF4CAF50"
+                                        Foreground="White"
+                                        Padding="12,8"
+                                        Margin="0,0,8,0"
+                                        BorderThickness="0"
+                                        Cursor="Hand"
+                                        Visibility="{Binding ValiderAjoutActif, Converter={StaticResource InverseNullToVisibilityConverter}}"/>
+
                                 <Button Content="+ Ajouter" 
                                      Command="{Binding ValiderAjoutCommand}"
                                        Background="green"

@@ -51,49 +51,69 @@ namespace Mediatheque
             return MessageBox.Show("Confirmez-vous la suppression ?", Title,
                 MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes;
         }
+      
 
-        // Ajoutez cette propriété à la classe MainWindow pour corriger l'erreur CS0103
-        public dynamic? SelectionEntrainement
+        private void PlanningItemsControl_SizeChanged(object sender, SizeChangedEventArgs e)
         {
-            get => _vm?.SelectionEntrainement;
+            // On récupère le ViewModel via le DataContext et la largeur réelle de l'élément émetteur
+            if (DataContext is MainViewModel vm)
+            {
+                vm.LargeurTotalePlanning = e.NewSize.Width;
+            }
+        }
+
+        private void PlanningGrid_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            if (DataContext is MainViewModel vm)
+            {
+                vm.LargeurTotalePlanning = e.NewSize.Width;
+            }
         }
 
         private void HeureDebut_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (SelectionEntrainement == null) return;
-
-            var comboBox = sender as ComboBox;
-            if (comboBox?.SelectedItem is ComboBoxItem selectedItem && selectedItem.Tag != null)
+            if (DataContext is MainViewModel vm && vm.SelectionEntrainement != null)
             {
-                int heure = Convert.ToInt32(selectedItem.Tag);
-                var dateActuelle = SelectionEntrainement.DateHeure;
-                SelectionEntrainement.DateHeure = new DateTime(
-                    dateActuelle.Year,
-                    dateActuelle.Month,
-                    dateActuelle.Day,
-                    heure,
-                    dateActuelle.Minute,
-                    0);
+                var comboBox = sender as ComboBox;
+                if (comboBox?.SelectedItem is ComboBoxItem selectedItem && selectedItem.Tag != null)
+                {
+                    int heure = Convert.ToInt32(selectedItem.Tag);
+                    var dateActuelle = vm.SelectionEntrainement.DateHeure;
+                    vm.SelectionEntrainement.DateHeure = new DateTime(       
+                        dateActuelle.Year,
+                        dateActuelle.Month,
+                        dateActuelle.Day,
+                        heure,
+                        dateActuelle.Minute,
+                        0);
+
+                    vm.NotifierChangementPlanning();
+                }
             }
         }
 
         private void MinuteDebut_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (SelectionEntrainement == null) return;
-
-            var comboBox = sender as ComboBox;
-            if (comboBox?.SelectedItem is ComboBoxItem selectedItem && selectedItem.Tag != null)
+            if (DataContext is MainViewModel vm && vm.SelectionEntrainement != null)
             {
-                int minute = Convert.ToInt32(selectedItem.Tag);
-                var dateActuelle = SelectionEntrainement.DateHeure;
-                SelectionEntrainement.DateHeure = new DateTime(
-                    dateActuelle.Year,
-                    dateActuelle.Month,
-                    dateActuelle.Day,
-                    dateActuelle.Hour,
-                    minute,
-                    0);
+                var comboBox = sender as ComboBox;
+                if (comboBox?.SelectedItem is ComboBoxItem selectedItem && selectedItem.Tag != null)
+                {
+                    int minute = Convert.ToInt32(selectedItem.Tag);
+                    var dateActuelle = vm.SelectionEntrainement.DateHeure; 
+                    vm.SelectionEntrainement.DateHeure = new DateTime(     
+                        dateActuelle.Year,
+                        dateActuelle.Month,
+                        dateActuelle.Day,
+                        dateActuelle.Hour,
+                        minute,
+                        0);
+
+                    vm.NotifierChangementPlanning();
+                }
             }
         }
+
+
     }
 }

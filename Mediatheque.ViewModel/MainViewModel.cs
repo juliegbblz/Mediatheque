@@ -1,4 +1,5 @@
 ﻿using Mediatheque.Data;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -27,7 +28,22 @@ namespace Mediatheque.ViewModel
         public ObservableCollection<EntrainementViewModel> Entrainements { get; }
             = new ObservableCollection<EntrainementViewModel>();
 
-      
+
+        private double _largeurTotalePlanning;
+        public double LargeurTotalePlanning
+        {
+            get => _largeurTotalePlanning;
+            set
+            {
+                if (_largeurTotalePlanning != value)
+                {
+                    _largeurTotalePlanning = value;
+                    OnPropertyChanged(nameof(LargeurTotalePlanning));
+                    // On force le recalcul des positions des rectangles
+                    OnPropertyChanged(nameof(EntrainementsSemaine));
+                }
+            }
+        }
 
         // Propriétés pour détecter le jour actuel
         public bool EstAujourdhuiLundi => DateTime.Today == DateLundi.Date;
@@ -64,8 +80,8 @@ namespace Mediatheque.ViewModel
 
             // S'abonner aux changements pour mettre à jour l'affichage
             Entrainements.CollectionChanged += (s, e) => OnPropertyChanged(
-                nameof(EntrainementsSemaine),
-                nameof(EntrainementsOrdonnes));
+                nameof(EntrainementsOrdonnes),
+                nameof(EntrainementsSemaine));
         }
 
         // Obtenir le lundi de la semaine contenant la date donnée
@@ -93,13 +109,50 @@ namespace Mediatheque.ViewModel
         {
             get
             {
+
+                double largeurUneColonne = LargeurTotalePlanning > 0
+                    ? (LargeurTotalePlanning / 7)
+                    : LARGEUR_COLONNE_BASE;
+
                 var finSemaine = _debutSemaine.AddDays(7);
-                return Entrainements
+                var inWeek = Entrainements
                     .Where(e => e.DateHeure >= _debutSemaine && e.DateHeure < finSemaine)
-                    .Select(e => new EntrainementViewModelAvecPosition(e, _debutSemaine, HEURE_DEBUT, HAUTEUR_HEURE, LARGEUR_COLONNE_BASE))
+                    .OrderBy(e => e.DateHeure)
                     .ToList();
+
+                var result = new List<EntrainementViewModelAvecPosition>();
+
+                var groupedByDay = inWeek.GroupBy(e => ((int)e.DateHeure.DayOfWeek + 6) % 7);
+
+                foreach (var dayGroup in groupedByDay)
+                {
+                    var sameStartGroups = dayGroup.GroupBy(e => e.DateHeure).ToList();
+
+                    foreach (var group in sameStartGroups)
+                    {
+                        int totalCount = group.Count();
+                        int currentIdx = 0;
+
+                        foreach (var entr in group)
+                        {
+                            result.Add(new EntrainementViewModelAvecPosition(
+                                entr,
+                                _debutSemaine,
+                                HEURE_DEBUT,
+                                HAUTEUR_HEURE,
+                                largeurUneColonne,         
+                                colonneIndex: currentIdx,
+                                colonnesTotal: totalCount));
+
+                            currentIdx++;
+                        }
+                    }
+                }
+
+                return result;
             }
         }
+
 
         // Tous les entraînements ordonnés par date
         public IEnumerable<EntrainementViewModel> EntrainementsOrdonnes =>
@@ -159,7 +212,9 @@ namespace Mediatheque.ViewModel
             var dateDefaut = DateTime.Today >= _debutSemaine && DateTime.Today < _debutSemaine.AddDays(7) 
                 ? DateTime.Today 
                 : _debutSemaine;
-            
+
+            var maintenantUtc = DateTime.SpecifyKind(dateDefaut.Date.AddHours(18), DateTimeKind.Utc);
+
             var e = new Entrainement
             {
                 Activite = "Nouvel entraînement",
@@ -179,13 +234,28 @@ namespace Mediatheque.ViewModel
         public void ValiderAjout()
         {
             if (SelectionEntrainement == null) return;
-            
-            // Ajouter à la base de données et à la collection
-            _context.Entrainements.Add(SelectionEntrainement.Modele);
-            Entrainements.Add(SelectionEntrainement);
-            
-            // Naviguer vers la semaine de l'entraînement ajouté
-            _debutSemaine = GetDebutSemaine(SelectionEntrainement.DateHeure);
+
+            // 1. CRÉER UN NOUVEAU modèle avec les valeurs du temporaire
+            var nouvelEntrainement = new Entrainement
+            {
+                Activite = SelectionEntrainement.Activite,
+                DateHeure = SelectionEntrainement.DateHeure,
+                Lieu = SelectionEntrainement.Lieu,
+                DureeMinutes = SelectionEntrainement.DureeMinutes
+            };
+
+            // 2. Ajouter le NOUVEAU à la base
+            _context.Entrainements.Add(nouvelEntrainement);
+
+            // 3. Créer un NOUVEAU ViewModel pour la collection (pas le temporaire !)
+            var nouveauViewModel = new EntrainementViewModel(nouvelEntrainement);
+            Entrainements.Add(nouveauViewModel);
+
+            // 4. Nettoyer : desélectionner l'ancien temporaire
+            SelectionEntrainement = null;
+
+            // 5. Naviguer vers la bonne semaine (utilise le nouveau)
+            _debutSemaine = GetDebutSemaine(nouvelEntrainement.DateHeure);
             OnPropertyChanged(
                 nameof(SemaineAffichee),
                 nameof(DateLundi), nameof(DateMardi), nameof(DateMercredi),
@@ -193,23 +263,62 @@ namespace Mediatheque.ViewModel
                 nameof(EstAujourdhuiLundi), nameof(EstAujourdhuiMardi), nameof(EstAujourdhuiMercredi),
                 nameof(EstAujourdhuiJeudi), nameof(EstAujourdhuiVendredi), nameof(EstAujourdhuiSamedi), nameof(EstAujourdhuiDimanche),
                 nameof(EntrainementsSemaine));
-    
+
             _view.InformationAjout();
         }
 
+
         public bool ValiderAjoutActif => SelectionEntrainement != null && !Entrainements.Contains(SelectionEntrainement);
+
+        public ICommand TerminerEditionCommand => new RelayCommand(TerminerEdition);
+
+        public void TerminerEdition()
+        {
+            if (SelectionEntrainement != null)
+            {
+                // Sauvegarde automatique des changements (si déjà dans la collection)
+                if (Entrainements.Contains(SelectionEntrainement))
+                {
+                    _context.SaveChanges();
+                }
+
+                // ❌ DÉSELECTIONNE l'entraînement
+                SelectionEntrainement = null;
+
+                // Rafraîchit l'affichage
+                OnPropertyChanged(nameof(EntrainementsSemaine));
+            }
+        }
+
 
         public ICommand SupprimerEntrainementCommand => new RelayCommand(SupprimerEntrainement);
 
         public void SupprimerEntrainement()
         {
             if (SelectionEntrainement == null) return;
-
             if (!_view.ConfirmationSuppression()) return;
 
-            _context.Entrainements.Remove(SelectionEntrainement.Modele);
+            var modele = SelectionEntrainement.Modele;
+            var entry = _context.Entry(modele);
+
+            // Cas A : L'entraînement n'a jamais été enregistré en base (Id = 0)
+            if (modele.Id == 0)
+            {
+                // On le détache simplement du contexte pour qu'il ne tente pas de l'insérer au prochain SaveChanges
+                entry.State = EntityState.Detached;
+            }
+            // Cas B : L'entraînement existe déjà en base de données
+            else
+            {
+                _context.Entrainements.Remove(modele);
+                _context.SaveChanges(); // Optionnel : à faire ici ou via un bouton "Enregistrer" global
+            }
+
+            // Mise à jour de la liste locale (Interface)
             Entrainements.Remove(SelectionEntrainement);
             SelectionEntrainement = null;
+
+            OnPropertyChanged(nameof(EntrainementsSemaine));
         }
 
         public bool SupprimerEntrainementActif => _selectionEntrainement != null;
@@ -252,6 +361,13 @@ namespace Mediatheque.ViewModel
         {
             _context.SaveChanges();
         }
+
+        public void NotifierChangementPlanning()
+        {
+            OnPropertyChanged(nameof(EntrainementsSemaine));
+            OnPropertyChanged(nameof(EntrainementsOrdonnes));
+        }
+
     }
 
 }

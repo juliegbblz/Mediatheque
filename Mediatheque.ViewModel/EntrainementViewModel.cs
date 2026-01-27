@@ -1,4 +1,4 @@
-using Mediatheque.Data;
+Ôªøusing Mediatheque.Data;
 using System;
 
 namespace Mediatheque.ViewModel
@@ -57,7 +57,7 @@ namespace Mediatheque.ViewModel
         public string Description => $"{DateHeure:dd/MM/yyyy HH:mm} - {Activite} @ {Lieu}";
     }
 
-    // Classe pour gÈrer le positionnement des entraÓnements dans le calendrier
+    // Classe pour g√©rer le positionnement des entra√Ænements dans le calendrier
     public class EntrainementViewModelAvecPosition
     {
         public EntrainementViewModel Entrainement { get; }
@@ -66,7 +66,7 @@ namespace Mediatheque.ViewModel
         public double Largeur { get; }
         public double Hauteur { get; }
 
-        // PropriÈtÈs pour le binding direct
+        // Propri√©t√©s pour le binding direct
         public string Activite => Entrainement.Activite;
         public DateTime DateHeure => Entrainement.DateHeure;
         public string Lieu => Entrainement.Lieu;
@@ -77,22 +77,30 @@ namespace Mediatheque.ViewModel
             DateTime debutSemaine,
             int heureDebut,
             int hauteurHeure,
-            double largeurColonne)
+            double largeurColonne,
+            int colonneIndex = 0,    // Ajout√© pour corriger l'erreur CS1739
+            int colonnesTotal = 1)   // Ajout√© pour g√©rer le nombre d'entra√Ænements
         {
             Entrainement = entrainement;
 
-            // Calculer la colonne (jour de la semaine, 0 = lundi)
-            int jourSemaine = ((int)entrainement.DateHeure.DayOfWeek + 6) % 7; // Lundi = 0
-            PositionX = jourSemaine * largeurColonne;
+            // 1. Calculer la colonne de base (Lundi = 0, Mardi = 1, etc.)
+            int jourSemaine = ((int)entrainement.DateHeure.DayOfWeek + 6) % 7;
 
-            // Calculer la position verticale selon l'heure
+            // 2. Calculer la largeur dynamique
+            // On divise la largeur totale de la colonne par le nombre d'entra√Ænements simultan√©s
+            double largeurDisponible = largeurColonne / colonnesTotal;
+            Largeur = largeurDisponible - 4; // On garde une petite marge de 4px
+
+            // 3. Calculer la PositionX
+            // (Position du jour) + (D√©calage selon l'index de l'entra√Ænement dans l'heure)
+            PositionX = (jourSemaine * largeurColonne) + (colonneIndex * largeurDisponible);
+
+            // 4. PositionY (reste identique √† votre logique)
             double heureDecimale = entrainement.DateHeure.Hour + entrainement.DateHeure.Minute / 60.0;
-            PositionY = (heureDecimale - heureDebut) * hauteurHeure;
+            double heuresDepuisDebutAffichage = heureDecimale - 8.0;  
+            PositionY = Math.Max(0, heuresDepuisDebutAffichage * hauteurHeure);
 
-            // Largeur = largeur de la colonne moins les marges (augmentÈ pour Èviter le dÈbordement)
-            Largeur = largeurColonne - 8; // AugmentÈ de 4 ‡ 8 pour avoir plus de marge
-
-            // Hauteur basÈe sur la durÈe
+            // 5. Hauteur (reste identique √† votre logique)
             Hauteur = (entrainement.DureeMinutes / 60.0) * hauteurHeure - 4;
         }
     }
