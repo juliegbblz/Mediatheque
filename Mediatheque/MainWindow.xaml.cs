@@ -19,24 +19,24 @@ namespace Mediatheque
         {
             InitializeComponent();
 
-            // Configuration et création de la base de données SQLite
-            var options = new DbContextOptionsBuilder()
+            // Configuration explicite avec le type du contexte
+            var options = new DbContextOptionsBuilder<MediathequeContext>()
                 .UseSqlite("Data Source=mediatheque.db")
                 .Options;
 
             var context = new MediathequeContext(options);
-            context.Database.EnsureCreated();
 
-            // Initialisation du ViewModel
+            // Applique les migrations (crée la base si elle n'existe pas ou ajoute les colonnes manquantes)
+            context.Database.Migrate();
+
             _vm = new MainViewModel(context, this);
             DataContext = _vm;
 
-            // Abonnement au changement de sélection pour synchroniser les menus déroulants (Heure/Minute/Durée)
             _vm.PropertyChanged += Vm_PropertyChanged;
         }
 
         /// Synchronise les ComboBox de l'interface quand l'utilisateur sélectionne un entraînement
-    
+
         private void Vm_PropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
             if (e.PropertyName == nameof(MainViewModel.SelectionEntrainement))

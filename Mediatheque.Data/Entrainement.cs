@@ -14,8 +14,11 @@ namespace Mediatheque.Data
 
         public string Lieu { get; set; } = string.Empty;
 
-        /// Durée en minutes
-       
+        //Durée en minutes       
         public int DureeMinutes { get; set; }
+
+        //Clés étrangères
+        public int CategorieActiviteId { get; set; }
+        public virtual CategorieActivite Categorie { get; set; }
     }
 }

@@ -18,12 +18,11 @@ namespace Mediatheque.ViewModel
         bool ConfirmationSuppression();
         void AlerteDepassementMinuit();
 
-        // Ajout d'une méthode pour notifier que l'entraînement ne peut pas commencer avant l'heure de début (06:00).
-        // Fournit une implémentation par défaut (no-op) pour ne pas casser les implémentations existantes.
+      
         void AlerteAvantHeureDebut()
         {
             // Implémentation par défaut : ne rien faire.
-            // La Vue (MainWindow) peut redéfinir cette méthode pour afficher un popup.
+          
         }
     }
 
@@ -57,6 +56,9 @@ namespace Mediatheque.ViewModel
             }
         }
 
+        public ObservableCollection<CategorieActivite> Categories { get; } = new();
+
+  
         // --- Détection du jour actuel ---
         public bool EstAujourdhuiLundi => DateTime.Today == DateLundi.Date;
         public bool EstAujourdhuiMardi => DateTime.Today == DateMardi.Date;
@@ -83,7 +85,13 @@ namespace Mediatheque.ViewModel
             _view = view;
             _debutSemaine = GetDebutSemaine(DateTime.Now);
 
-            foreach (var e in _context.Entrainements)
+            // 1. Charger les catégories d'abord
+            Categories.Clear();
+            foreach (var c in _context.Categories) Categories.Add(c);
+
+            // 2. Charger les entraînements AVEC leur catégorie (le .Include est vital)
+            var liste = _context.Entrainements.Include(e => e.Categorie).ToList();
+            foreach (var e in liste)
             {
                 Entrainements.Add(new EntrainementViewModel(e));
             }
@@ -170,39 +178,44 @@ namespace Mediatheque.ViewModel
 
         // --- Gestion des Entraînements (CRUD) ---
 
-      
+
         /// Initialise un nouvel objet d'entraînement temporaire pour l'édition.
-    
+
         public ICommand AjouterEntrainementCommand => new RelayCommand(() => {
-            var dateDefaut = (DateTime.Today >= _debutSemaine && DateTime.Today < _debutSemaine.AddDays(7)) ? DateTime.Today : _debutSemaine;
+            var dateDefaut = (DateTime.Today >= _debutSemaine && DateTime.Today < _debutSemaine.AddDays(7))
+                             ? DateTime.Today : _debutSemaine;
+
             var e = new Entrainement
             {
                 Activite = "Nouvel entraînement",
                 DateHeure = dateDefaut.Date.AddHours(18),
                 Lieu = "Gymnase",
-                DureeMinutes = 60
+                DureeMinutes = 60,
+                // Assigne la première catégorie par défaut pour éviter le null
+                Categorie = Categories.FirstOrDefault()
             };
+
+            // On lie l'ID pour la DB
+            if (e.Categorie != null) e.CategorieActiviteId = e.Categorie.Id;
+
             SelectionEntrainement = new EntrainementViewModel(e);
         });
 
-       
+
         /// Enregistre l'entraînement créé dans la base de données et l'ajoute à la vue.
-     
+
         public ICommand ValiderAjoutCommand => new RelayCommand(() => {
             if (SelectionEntrainement == null) return;
 
             if (ClampDurationToMidnight(SelectionEntrainement)) _view.AlerteDepassementMinuit();
 
-            var modele = new Entrainement
-            {
-                Activite = SelectionEntrainement.Activite,
-                DateHeure = SelectionEntrainement.DateHeure,
-                Lieu = SelectionEntrainement.Lieu,
-                DureeMinutes = SelectionEntrainement.DureeMinutes
-            };
+            // On récupère le modèle qui est DÉJÀ dans le SelectionEntrainement
+            var modele = SelectionEntrainement.Modele;
 
             _context.Entrainements.Add(modele);
-            Entrainements.Add(new EntrainementViewModel(modele));
+            _context.SaveChanges(); // On sauvegarde tout de suite pour avoir l'ID
+
+            Entrainements.Add(SelectionEntrainement); // On ajoute le VM existant
             SelectionEntrainement = null;
             _view.InformationAjout();
         });

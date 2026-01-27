@@ -265,22 +265,16 @@
                             </Border>
 
                             <!-- Cases des jours avec bordures -->
-                            <ItemsControl Grid.Row="0" Grid.RowSpan="18" Grid.Column="1" Grid.ColumnSpan="7">
-                                <ItemsControl.ItemsPanel>
-                                    <ItemsPanelTemplate>
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="*"/>
-                                                <ColumnDefinition Width="*"/>
-                                                <ColumnDefinition Width="*"/>
-                                                <ColumnDefinition Width="*"/>
-                                                <ColumnDefinition Width="*"/>
-                                                <ColumnDefinition Width="*"/>
-                                                <ColumnDefinition Width="*"/>
-                                            </Grid.ColumnDefinitions>
-                                        </Grid>
-                                    </ItemsPanelTemplate>
-                                </ItemsControl.ItemsPanel>
+                            <Grid Grid.Row="0" Grid.RowSpan="18" Grid.Column="1" Grid.ColumnSpan="7">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
                                 <Border Grid.Column="0" BorderBrush="LightGray" BorderThickness="0,0,1,0" Background="White"/>
                                 <Border Grid.Column="1" BorderBrush="LightGray" BorderThickness="0,0,1,0" Background="White"/>
                                 <Border Grid.Column="2" BorderBrush="LightGray" BorderThickness="0,0,1,0" Background="White"/>
@@ -288,7 +282,7 @@
                                 <Border Grid.Column="4" BorderBrush="LightGray" BorderThickness="0,0,1,0" Background="White"/>
                                 <Border Grid.Column="5" BorderBrush="LightGray" BorderThickness="0,0,1,0" Background="LightYellow"/>
                                 <Border Grid.Column="6" BorderBrush="LightGray" BorderThickness="0,0,1,0" Background="LightYellow"/>
-                            </ItemsControl>
+                            </Grid>
 
                             <!-- Lignes horaires horizontales -->
                             <Rectangle Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="7" Height="1" VerticalAlignment="Bottom" Fill="LightGray"/>
@@ -330,8 +324,8 @@
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
                                         <Border x:Name="BorderEntrainement"
-                                                Background="#FF4A90E2" 
-                                                BorderBrush="DarkBlue" 
+                                                Background="{Binding Couleur}"  
+                                                BorderBrush="Black" 
                                                 BorderThickness="2" 
                                                 CornerRadius="4"
                                                 Width="{Binding Largeur}"
@@ -339,26 +333,20 @@
                                                 Margin="2"
                                                 Cursor="Hand">
 
+                                            <!-- Garder un seul StackPanel ici -->
+                                            <StackPanel Margin="4">
+                                                <TextBlock Text="{Binding Activite}" FontWeight="Bold" Foreground="White"/>
+                                                <TextBlock Text="{Binding Modele.Categorie.Nom}" FontSize="8" Foreground="WhiteSmoke" Opacity="0.8"/>
+                                                <TextBlock Text="{Binding DateHeure, StringFormat=HH:mm}" FontSize="10" Foreground="White"/>
+                                                <TextBlock Text="{Binding Lieu}" FontSize="9" Foreground="WhiteSmoke" TextWrapping="Wrap"/>
+                                            </StackPanel>
+
 
                                             <Border.InputBindings>
                                                 <MouseBinding MouseAction="LeftClick" 
                                                               Command="{Binding DataContext.SelectionnerEntrainementCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                                               CommandParameter="{Binding}"/>
                                             </Border.InputBindings>
-                                            <StackPanel Margin="4">
-                                                <TextBlock Text="{Binding Activite}" 
-                                                           FontWeight="Bold" 
-                                                           FontSize="11" 
-                                                           Foreground="White"
-                                                           TextWrapping="Wrap"/>
-                                                <TextBlock Text="{Binding DateHeure, StringFormat=HH:mm}" 
-                                                           FontSize="10" 
-                                                           Foreground="White"/>
-                                                <TextBlock Text="{Binding Lieu}" 
-                                                           FontSize="9" 
-                                                           Foreground="WhiteSmoke"
-                                                           TextWrapping="Wrap"/>
-                                            </StackPanel>
                                         </Border>
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>
@@ -420,6 +408,27 @@
                                 <ComboBoxItem Content="Danse"/>
                                 <ComboBoxItem Content="Yoga"/>
                                 <ComboBoxItem Content="Musculation"/>
+                            </ComboBox>
+
+                            <!-- Catégorie d'entraînement -->
+                            <TextBlock Text="Catégorie (Couleur) :" 
+                                       FontWeight="SemiBold" 
+                                       Margin="0,0,0,4"/>
+                            <ComboBox ItemsSource="{Binding DataContext.Categories, RelativeSource={RelativeSource AncestorType=Window}}"
+                                      SelectedItem="{Binding SelectionEntrainement.Categorie, Mode=TwoWay}"
+                                      Margin="0,0,0,12"
+                                      Padding="8,6">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal">
+                                            <Rectangle Width="12" Height="12" 
+                                                       Fill="{Binding CouleurHex}" 
+                                                       Margin="0,0,8,0"
+                                                       RadiusX="2" RadiusY="2"/>
+                                            <TextBlock Text="{Binding Nom}"/>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
                             </ComboBox>
 
                             <!-- Horaire de début -->
@@ -501,16 +510,7 @@
 
                             <!-- Boutons d'action -->
                             <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-                                <Button Content="✅ OK" 
-                                        Command="{Binding TerminerEditionCommand}"
-                                        Background="#FF4CAF50"
-                                        Foreground="White"
-                                        Padding="12,8"
-                                        Margin="0,0,8,0"
-                                        BorderThickness="0"
-                                        Cursor="Hand"
-                                        Visibility="{Binding ValiderAjoutActif, Converter={StaticResource InverseNullToVisibilityConverter}}"/>
-
+                                
                                 <Button Content="+ Ajouter" 
                                      Command="{Binding ValiderAjoutCommand}"
                                        Background="green"
