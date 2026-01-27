@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Mediatheque.ViewModel
 {
-    public class ViewModelBase : INotifyPropertyChanged // WPF reconnait cette interface et s'abonne à PropertyChanged.
+    public class ViewModelBase : INotifyPropertyChanged // WPF s'abonne à PropertyChanged
     {
         private static readonly Dictionary<string, PropertyChangedEventArgs> PROPERTY_CHANGED_CACHE = new ();
 
@@ -22,15 +22,7 @@ namespace Mediatheque.ViewModel
             return e;
         }
 
-        // Techniquement,
-        //  - PropertyChangedEventHandler est un délégué pour une fonction void (object sender, PropertyChangedEventArgs e).
-        //  - event permet l'abonnement et le désabonnement à un évènement.
-        //    Pour ce faire, le compilateur génére du code gérant la liste des abonnés.
-        //  - Le ? signifie que PropertyChanged peut être null i.e. il n'y a pas d'abonné.
-        //
-        // Ce évènement est déclenché lorsqu'une propriété est modifiée.
-        // A ce moment, WPF rafraîchit l'IU en relisant les propriétés liées.
-        //
+       
         public event PropertyChangedEventHandler? PropertyChanged;
 
         protected void OnPropertyChanged(string propertyName)

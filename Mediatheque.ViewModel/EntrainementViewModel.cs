@@ -3,6 +3,10 @@ using System;
 
 namespace Mediatheque.ViewModel
 {
+   
+    /// ViewModel représentant une séance d'entraînement.
+    /// Gère la validation métier (limite de minuit) et la notification de l'UI.
+  
     public class EntrainementViewModel : ViewModelBase
     {
         private readonly Entrainement _modele;
@@ -30,6 +34,15 @@ namespace Mediatheque.ViewModel
             set
             {
                 _modele.DateHeure = value;
+
+                // Ajustement automatique de la durée si le nouvel horaire dépasse minuit
+                int maxMinutes = GetMinutesUntilMidnight(_modele.DateHeure);
+                if (_modele.DureeMinutes > maxMinutes)
+                {
+                    _modele.DureeMinutes = maxMinutes;
+                    OnPropertyChanged(nameof(DureeMinutes));
+                }
+
                 OnPropertyChanged(nameof(DateHeure), nameof(Description));
             }
         }
@@ -49,24 +62,44 @@ namespace Mediatheque.ViewModel
             get => _modele.DureeMinutes;
             set
             {
-                _modele.DureeMinutes = value;
-                OnPropertyChanged(nameof(DureeMinutes));
+                // Empêche techniquement la séance de déborder sur le jour suivant
+                int maxMinutes = GetMinutesUntilMidnight(_modele.DateHeure);
+                int clamped = Math.Min(Math.Max(0, value), maxMinutes);
+
+                if (_modele.DureeMinutes != clamped)
+                {
+                    _modele.DureeMinutes = clamped;
+                    OnPropertyChanged(nameof(DureeMinutes));
+                }
             }
         }
 
         public string Description => $"{DateHeure:dd/MM/yyyy HH:mm} - {Activite} @ {Lieu}";
+
+      
+        /// Calcule le temps restant avant la fin de la journée en cours.
+       
+        private int GetMinutesUntilMidnight(DateTime dt)
+        {
+            var midnight = dt.Date.AddDays(1);
+            return (int)Math.Max(0, (midnight - dt).TotalMinutes);
+        }
     }
 
-    // Classe pour gérer le positionnement des entraînements dans le calendrier
+   
+    /// Wrapper calculant les coordonnées graphiques (X, Y) pour l'affichage dans le Canvas du calendrier.
+  
     public class EntrainementViewModelAvecPosition
     {
         public EntrainementViewModel Entrainement { get; }
+
+        // Coordonnées et dimensions pour le rendu XAML (Canvas)
         public double PositionX { get; }
         public double PositionY { get; }
         public double Largeur { get; }
         public double Hauteur { get; }
 
-        // Propriétés pour le binding direct
+        // Raccourcis pour le binding direct dans le template d'affichage
         public string Activite => Entrainement.Activite;
         public DateTime DateHeure => Entrainement.DateHeure;
         public string Lieu => Entrainement.Lieu;
@@ -78,29 +111,27 @@ namespace Mediatheque.ViewModel
             int heureDebut,
             int hauteurHeure,
             double largeurColonne,
-            int colonneIndex = 0,    // Ajouté pour corriger l'erreur CS1739
-            int colonnesTotal = 1)   // Ajouté pour gérer le nombre d'entraînements
+            int colonneIndex = 0,
+            int colonnesTotal = 1)
         {
             Entrainement = entrainement;
 
-            // 1. Calculer la colonne de base (Lundi = 0, Mardi = 1, etc.)
+            // Placement horizontal : Calcul du jour de la semaine (0 = Lundi)
             int jourSemaine = ((int)entrainement.DateHeure.DayOfWeek + 6) % 7;
 
-            // 2. Calculer la largeur dynamique
-            // On divise la largeur totale de la colonne par le nombre d'entraînements simultanés
+            // Calcul de la largeur : Gestion du chevauchement si plusieurs séances ont lieu en même temps
             double largeurDisponible = largeurColonne / colonnesTotal;
-            Largeur = largeurDisponible - 4; // On garde une petite marge de 4px
+            Largeur = largeurDisponible - 4; // Marge de 4px pour l'esthétique
 
-            // 3. Calculer la PositionX
-            // (Position du jour) + (Décalage selon l'index de l'entraînement dans l'heure)
+            // Position X : Colonne du jour + décalage horizontal si superposition
             PositionX = (jourSemaine * largeurColonne) + (colonneIndex * largeurDisponible);
 
-            // 4. PositionY (reste identique à votre logique)
+            // Position Y : Distance par rapport à l'heure de début du planning (ex: 6h)
             double heureDecimale = entrainement.DateHeure.Hour + entrainement.DateHeure.Minute / 60.0;
-            double heuresDepuisDebutAffichage = heureDecimale - 8.0;  
+            double heuresDepuisDebutAffichage = heureDecimale - heureDebut;
             PositionY = Math.Max(0, heuresDepuisDebutAffichage * hauteurHeure);
 
-            // 5. Hauteur (reste identique à votre logique)
+            // Hauteur : Proportionnelle à la durée de la séance (1h = hauteurHeure pixels)
             Hauteur = (entrainement.DureeMinutes / 60.0) * hauteurHeure - 4;
         }
     }

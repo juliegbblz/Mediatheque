@@ -14,9 +14,8 @@ namespace Mediatheque.Data
 
         public string Lieu { get; set; } = string.Empty;
 
-        /// <summary>
         /// Durée en minutes
-        /// </summary>
+       
         public int DureeMinutes { get; set; }
     }
 }

@@ -25,7 +25,7 @@
 
             <!-- Colonne gauche : Emploi du temps hebdomadaire -->
             <Border Grid.Column="0" Margin="8" BorderBrush="Gray" BorderThickness="1">
-                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Margin="-1,-1,1,-49">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Margin="-1,-1,1,0" Padding="0,0,0,8">
                     <Grid Margin="4">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
@@ -168,37 +168,25 @@
                               x:Name="PlanningGrid"
                               SizeChanged="PlanningGrid_SizeChanged">
                             <Grid.RowDefinitions>
-                                <RowDefinition Height="60"/>
-                                <!-- 08:00 -->
-                                <RowDefinition Height="60"/>
-                                <!-- 09:00 -->
-                                <RowDefinition Height="60"/>
-                                <!-- 10:00 -->
-                                <RowDefinition Height="60"/>
-                                <!-- 11:00 -->
-                                <RowDefinition Height="60"/>
-                                <!-- 12:00 -->
-                                <RowDefinition Height="60"/>
-                                <!-- 13:00 -->
-                                <RowDefinition Height="60"/>
-                                <!-- 14:00 -->
-                                <RowDefinition Height="60"/>
-                                <!-- 15:00 -->
+                                <!-- 06:00 -> 23:00 : 18 lignes -->
                                 <RowDefinition Height="60"/>
                                 <RowDefinition Height="60"/>
-                                <!-- 16:00 -->
                                 <RowDefinition Height="60"/>
-                                <!-- 17:00 -->
                                 <RowDefinition Height="60"/>
-                                <!-- 18:00 -->
                                 <RowDefinition Height="60"/>
-                                <!-- 19:00 -->
                                 <RowDefinition Height="60"/>
-                                <!-- 20:00 -->
                                 <RowDefinition Height="60"/>
-                                <!-- 21:00 -->
                                 <RowDefinition Height="60"/>
-                                <!-- 22:00 -->
+                                <RowDefinition Height="60"/>
+                                <RowDefinition Height="60"/>
+                                <RowDefinition Height="60"/>
+                                <RowDefinition Height="60"/>
+                                <RowDefinition Height="60"/>
+                                <RowDefinition Height="60"/>
+                                <RowDefinition Height="60"/>
+                                <RowDefinition Height="60"/>
+                                <RowDefinition Height="60"/>
+                                <RowDefinition Height="60"/>
                             </Grid.RowDefinitions>
 
                             <Grid.ColumnDefinitions>
@@ -222,53 +210,62 @@
 
                             <!-- Étiquettes d'heures et lignes de séparation -->
                             <Border Grid.Row="0" Grid.Column="0" BorderBrush="LightGray" BorderThickness="0,0,1,1" Padding="4">
-                                <TextBlock Text="08:00" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="11"/>
+                                <TextBlock Text="06:00" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="11"/>
                             </Border>
                             <Border Grid.Row="1" Grid.Column="0" BorderBrush="LightGray" BorderThickness="0,0,1,1" Padding="4">
-                                <TextBlock Text="09:00" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="11"/>
+                                <TextBlock Text="07:00" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="11"/>
                             </Border>
                             <Border Grid.Row="2" Grid.Column="0" BorderBrush="LightGray" BorderThickness="0,0,1,1" Padding="4">
-                                <TextBlock Text="10:00" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="11"/>
+                                <TextBlock Text="08:00" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="11"/>
                             </Border>
                             <Border Grid.Row="3" Grid.Column="0" BorderBrush="LightGray" BorderThickness="0,0,1,1" Padding="4">
-                                <TextBlock Text="11:00" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="11"/>
+                                <TextBlock Text="09:00" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="11"/>
                             </Border>
                             <Border Grid.Row="4" Grid.Column="0" BorderBrush="LightGray" BorderThickness="0,0,1,1" Padding="4">
-                                <TextBlock Text="12:00" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="11"/>
+                                <TextBlock Text="10:00" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="11"/>
                             </Border>
                             <Border Grid.Row="5" Grid.Column="0" BorderBrush="LightGray" BorderThickness="0,0,1,1" Padding="4">
-                                <TextBlock Text="13:00" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="11"/>
+                                <TextBlock Text="11:00" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="11"/>
                             </Border>
                             <Border Grid.Row="6" Grid.Column="0" BorderBrush="LightGray" BorderThickness="0,0,1,1" Padding="4">
-                                <TextBlock Text="14:00" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="11"/>
+                                <TextBlock Text="12:00" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="11"/>
                             </Border>
                             <Border Grid.Row="7" Grid.Column="0" BorderBrush="LightGray" BorderThickness="0,0,1,1" Padding="4">
-                                <TextBlock Text="15:00" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="11"/>
+                                <TextBlock Text="13:00" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="11"/>
                             </Border>
                             <Border Grid.Row="8" Grid.Column="0" BorderBrush="LightGray" BorderThickness="0,0,1,1" Padding="4">
-                                <TextBlock Text="16:00" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="11"/>
+                                <TextBlock Text="14:00" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="11"/>
                             </Border>
                             <Border Grid.Row="9" Grid.Column="0" BorderBrush="LightGray" BorderThickness="0,0,1,1" Padding="4">
-                                <TextBlock Text="17:00" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="11"/>
+                                <TextBlock Text="15:00" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="11"/>
                             </Border>
                             <Border Grid.Row="10" Grid.Column="0" BorderBrush="LightGray" BorderThickness="0,0,1,1" Padding="4">
-                                <TextBlock Text="18:00" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="11"/>
+                                <TextBlock Text="16:00" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="11"/>
                             </Border>
                             <Border Grid.Row="11" Grid.Column="0" BorderBrush="LightGray" BorderThickness="0,0,1,1" Padding="4">
-                                <TextBlock Text="19:00" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="11"/>
+                                <TextBlock Text="17:00" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="11"/>
                             </Border>
                             <Border Grid.Row="12" Grid.Column="0" BorderBrush="LightGray" BorderThickness="0,0,1,1" Padding="4">
-                                <TextBlock Text="20:00" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="11"/>
+                                <TextBlock Text="18:00" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="11"/>
                             </Border>
                             <Border Grid.Row="13" Grid.Column="0" BorderBrush="LightGray" BorderThickness="0,0,1,1" Padding="4">
-                                <TextBlock Text="21:00" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="11"/>
+                                <TextBlock Text="19:00" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="11"/>
                             </Border>
                             <Border Grid.Row="14" Grid.Column="0" BorderBrush="LightGray" BorderThickness="0,0,1,1" Padding="4">
+                                <TextBlock Text="20:00" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="11"/>
+                            </Border>
+                            <Border Grid.Row="15" Grid.Column="0" BorderBrush="LightGray" BorderThickness="0,0,1,1" Padding="4">
+                                <TextBlock Text="21:00" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="11"/>
+                            </Border>
+                            <Border Grid.Row="16" Grid.Column="0" BorderBrush="LightGray" BorderThickness="0,0,1,1" Padding="4">
                                 <TextBlock Text="22:00" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="11"/>
+                            </Border>
+                            <Border Grid.Row="17" Grid.Column="0" BorderBrush="LightGray" BorderThickness="0,0,1,1" Padding="4">
+                                <TextBlock Text="23:00" HorizontalAlignment="Center" VerticalAlignment="Top" FontSize="11"/>
                             </Border>
 
                             <!-- Cases des jours avec bordures -->
-                            <ItemsControl Grid.Row="0" Grid.RowSpan="15" Grid.Column="1" Grid.ColumnSpan="7">
+                            <ItemsControl Grid.Row="0" Grid.RowSpan="18" Grid.Column="1" Grid.ColumnSpan="7">
                                 <ItemsControl.ItemsPanel>
                                     <ItemsPanelTemplate>
                                         <Grid>
@@ -309,12 +306,16 @@
                             <Rectangle Grid.Row="12" Grid.Column="1" Grid.ColumnSpan="7" Height="1" VerticalAlignment="Bottom" Fill="LightGray"/>
                             <Rectangle Grid.Row="13" Grid.Column="1" Grid.ColumnSpan="7" Height="1" VerticalAlignment="Bottom" Fill="LightGray"/>
                             <Rectangle Grid.Row="14" Grid.Column="1" Grid.ColumnSpan="7" Height="1" VerticalAlignment="Bottom" Fill="LightGray"/>
+                            <Rectangle Grid.Row="15" Grid.Column="1" Grid.ColumnSpan="7" Height="1" VerticalAlignment="Bottom" Fill="LightGray"/>
+                            <Rectangle Grid.Row="16" Grid.Column="1" Grid.ColumnSpan="7" Height="1" VerticalAlignment="Bottom" Fill="LightGray"/>
+                            <Rectangle Grid.Row="17" Grid.Column="1" Grid.ColumnSpan="7" Height="1" VerticalAlignment="Bottom" Fill="LightGray"/>
 
                             <!-- Entraînements de la semaine -->
                             <ItemsControl x:Name="PlanningItemsControl"
-                                          Grid.Row="0" Grid.RowSpan="15" Grid.Column="1" Grid.ColumnSpan="7" 
+                                          Grid.Row="0" Grid.RowSpan="18" Grid.Column="1" Grid.ColumnSpan="7" 
                                           ItemsSource="{Binding EntrainementsSemaine}"
-                                          SizeChanged="PlanningItemsControl_SizeChanged">
+                                          SizeChanged="PlanningItemsControl_SizeChanged"
+                                          Margin="0,0,0,4">
                                 <ItemsControl.ItemsPanel>
                                     <ItemsPanelTemplate>
                                         <Canvas/>
@@ -371,7 +372,7 @@
             <Border Grid.Column="1" Margin="8" BorderBrush="Gray" BorderThickness="1" Background="#FFF5F5F5">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel Margin="12">
-                        <TextBlock Text="Gestion des entraînements" 
+                        <TextBlock Text="Gestion des entraînements du bureau des sports" 
                                    FontSize="18" 
                                    FontWeight="Bold" 
                                    Margin="0,0,0,16"/>
@@ -447,6 +448,7 @@
                                     <ComboBoxItem Content="20" Tag="20"/>
                                     <ComboBoxItem Content="21" Tag="21"/>
                                     <ComboBoxItem Content="22" Tag="22"/>
+                                    <ComboBoxItem Content="23" Tag="23"/>
                                 </ComboBox>
                                 <TextBlock Text="h" 
                                            VerticalAlignment="Center" 
@@ -466,8 +468,10 @@
                             <TextBlock Text="Durée (minutes) :" 
                                        FontWeight="SemiBold" 
                                        Margin="0,0,0,4"/>
-                            <ComboBox SelectedValue="{Binding SelectionEntrainement.DureeMinutes, Mode=TwoWay}"
+                            <ComboBox x:Name="DureeCombo"
+                                      SelectedValue="{Binding SelectionEntrainement.DureeMinutes, Mode=TwoWay}"
                                       SelectedValuePath="Tag"
+                                      SelectionChanged="Duree_SelectionChanged"
                                       Margin="0,0,0,12"
                                       Padding="8,6">
                                 <ComboBoxItem Content="30 minutes" Tag="30"/>

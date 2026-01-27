@@ -10,7 +10,7 @@ namespace Mediatheque.ViewModel
     public class RelayCommand : ICommand
     {
         // Action est un délégué vers une fonction void().
-        //
+        
         private readonly Action _action;
 
         public RelayCommand(Action action)
@@ -20,7 +20,7 @@ namespace Mediatheque.ViewModel
 
         // Evènement jamais déclenché (CanExecute retourne toujours true).
         // add et remove sont détaillées sans gérer de liste d'abonnés.
-        //
+       
         public event EventHandler? CanExecuteChanged
         {
            add { } // Abonnement à l'évènement (CanExecuteChanged += ...)
@@ -38,7 +38,7 @@ namespace Mediatheque.ViewModel
     public class RelayCommand<T> : ICommand
     {
         // Action est un délégué vers une fonction void(T parameter).
-        //
+        
         private readonly Action<T> _action;
 
         public RelayCommand(Action<T> action)
@@ -48,7 +48,7 @@ namespace Mediatheque.ViewModel
 
         // Evènement jamais déclenché (CanExecute retourne toujours true).
         // add et remove sont détaillées sans gérer de liste d'abonnés.
-        //
+        
         public event EventHandler? CanExecuteChanged
         {
             add { } // Abonnement à l'évènement (CanExecuteChanged += ...)

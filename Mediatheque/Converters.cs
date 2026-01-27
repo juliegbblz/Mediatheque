@@ -5,9 +5,7 @@ using System.Windows.Media;
 
 namespace Mediatheque;
 
-/// <summary>
 /// Convertit un booléen en couleur de fond pour le calendrier
-/// </summary>
 public class BoolToBackgroundConverter : IValueConverter
 {
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
@@ -34,9 +32,8 @@ public class BoolToBackgroundConverter : IValueConverter
     }
 }
 
-/// <summary>
 /// Convertit un booléen en Visibility (true = Visible, false = Collapsed)
-/// </summary>
+
 public class BoolToVisibilityConverter : IValueConverter
 {
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
@@ -55,9 +52,8 @@ public class BoolToVisibilityConverter : IValueConverter
     }
 }
 
-/// <summary>
 /// Convertit null en Visibility (non-null = Visible, null = Collapsed)
-/// </summary>
+
 public class NullToVisibilityConverter : IValueConverter
 {
     public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
@@ -71,9 +67,8 @@ public class NullToVisibilityConverter : IValueConverter
     }
 }
 
-/// <summary>
 /// Convertit null en Visibility inverse (null = Visible, non-null = Collapsed)
-/// </summary>
+
 public class InverseNullToVisibilityConverter : IValueConverter
 {
     public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
