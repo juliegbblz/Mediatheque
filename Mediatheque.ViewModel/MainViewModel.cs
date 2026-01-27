@@ -9,26 +9,35 @@ using System.Windows.Input;
 
 namespace Mediatheque.ViewModel
 {
-   
-    /// Interface de communication entre le ViewModel et la Vue (MainWindow).
-
+    /// <summary>
+    /// Interface définissant les interactions UI déclenchées par le ViewModel.
+    /// </summary>
     public interface IMainView
     {
         void InformationAjout();
         bool ConfirmationSuppression();
         void AlerteDepassementMinuit();
+
+        // Ajout d'une méthode pour notifier que l'entraînement ne peut pas commencer avant l'heure de début (06:00).
+        // Fournit une implémentation par défaut (no-op) pour ne pas casser les implémentations existantes.
+        void AlerteAvantHeureDebut()
+        {
+            // Implémentation par défaut : ne rien faire.
+            // La Vue (MainWindow) peut redéfinir cette méthode pour afficher un popup.
+        }
     }
 
-    /// ViewModel principal gérant la logique du calendrier et les opérations CRUD sur les entraînements.
-   
+    /// <summary>
+    /// ViewModel principal gérant la logique métier du calendrier et les opérations CRUD.
+    /// </summary>
     public class MainViewModel : ViewModelBase
     {
         private readonly MediathequeContext _context;
         private readonly IMainView _view;
 
         private DateTime _debutSemaine;
-        private const int HEURE_DEBUT = 6; // Le planning commence désormais à 06:00
-        private const int HAUTEUR_HEURE = 60; // Ratio de 60px pour 1 heure
+        private const int HEURE_DEBUT = 6;
+        private const int HAUTEUR_HEURE = 60;
         private const double LARGEUR_COLONNE_BASE = 95;
 
         public ObservableCollection<EntrainementViewModel> Entrainements { get; } = new ObservableCollection<EntrainementViewModel>();
@@ -43,13 +52,12 @@ namespace Mediatheque.ViewModel
                 {
                     _largeurTotalePlanning = value;
                     OnPropertyChanged(nameof(LargeurTotalePlanning));
-                    // Force la recalcul des positions X lors du redimensionnement de la fenêtre
                     OnPropertyChanged(nameof(EntrainementsSemaine));
                 }
             }
         }
 
-        // --- Détection du jour actuel pour mise en évidence dans l'UI ---
+        // --- Détection du jour actuel ---
         public bool EstAujourdhuiLundi => DateTime.Today == DateLundi.Date;
         public bool EstAujourdhuiMardi => DateTime.Today == DateMardi.Date;
         public bool EstAujourdhuiMercredi => DateTime.Today == DateMercredi.Date;
@@ -75,7 +83,6 @@ namespace Mediatheque.ViewModel
             _view = view;
             _debutSemaine = GetDebutSemaine(DateTime.Now);
 
-            // Chargement initial des données depuis SQLite
             foreach (var e in _context.Entrainements)
             {
                 Entrainements.Add(new EntrainementViewModel(e));
@@ -90,7 +97,7 @@ namespace Mediatheque.ViewModel
             return date.AddDays(-diff).Date;
         }
 
-        // --- Propriétés de gestion des dates de la semaine ---
+        // --- Propriétés de gestion des dates ---
         public string SemaineAffichee => $"Semaine du {_debutSemaine:dd/MM/yyyy} au {_debutSemaine.AddDays(6):dd/MM/yyyy}";
         public DateTime DateLundi => _debutSemaine;
         public DateTime DateMardi => _debutSemaine.AddDays(1);
@@ -100,9 +107,9 @@ namespace Mediatheque.ViewModel
         public DateTime DateSamedi => _debutSemaine.AddDays(5);
         public DateTime DateDimanche => _debutSemaine.AddDays(6);
 
-     
-        /// Liste les entraînements de la semaine actuelle calculés avec leurs coordonnées graphiques.
-      
+       
+        /// Calcule les positions graphiques des entraînements en gérant les collisions par intersection de plages horaires.
+    
         public IEnumerable<EntrainementViewModelAvecPosition> EntrainementsSemaine
         {
             get
@@ -124,13 +131,12 @@ namespace Mediatheque.ViewModel
 
                     foreach (var entr in dayList)
                     {
-                        // Gestion des collisions : regrouper ceux qui ont lieu à la même heure
+                        // Détection de collision : deux entraînements se chevauchent si l'un commence avant que l'autre ne finisse.
                         var collisions = dayList.Where(other =>
                             entr.DateHeure < other.DateHeure.AddMinutes(other.DureeMinutes) &&
                             entr.DateHeure.AddMinutes(entr.DureeMinutes) > other.DateHeure).ToList();
 
                         int totalCount = collisions.Count;
-                        
                         int currentIdx = collisions.IndexOf(entr);
 
                         result.Add(new EntrainementViewModelAvecPosition(
@@ -165,8 +171,8 @@ namespace Mediatheque.ViewModel
         // --- Gestion des Entraînements (CRUD) ---
 
       
-        /// Prépare un nouvel entraînement sans l'ajouter immédiatement à la base.
-
+        /// Initialise un nouvel objet d'entraînement temporaire pour l'édition.
+    
         public ICommand AjouterEntrainementCommand => new RelayCommand(() => {
             var dateDefaut = (DateTime.Today >= _debutSemaine && DateTime.Today < _debutSemaine.AddDays(7)) ? DateTime.Today : _debutSemaine;
             var e = new Entrainement
@@ -180,7 +186,7 @@ namespace Mediatheque.ViewModel
         });
 
        
-        /// Valide la création et l'ajoute officiellement au contexte et à la collection.
+        /// Enregistre l'entraînement créé dans la base de données et l'ajoute à la vue.
      
         public ICommand ValiderAjoutCommand => new RelayCommand(() => {
             if (SelectionEntrainement == null) return;
@@ -232,11 +238,44 @@ namespace Mediatheque.ViewModel
         public ICommand DeplacerEntrainementPlusTardCommand => new RelayCommand(() => ModifierHeure(1));
         public ICommand DeplacerEntrainementPlusTotCommand => new RelayCommand(() => ModifierHeure(-1));
 
+        
+        /// Modifie l'heure de début tout en respectant les limites de la plage horaire affichée.
+       
         private void ModifierHeure(int delta)
         {
             if (SelectionEntrainement == null) return;
-            SelectionEntrainement.DateHeure = SelectionEntrainement.DateHeure.AddHours(delta);
-            if (ClampDurationToMidnight(SelectionEntrainement)) _view.AlerteDepassementMinuit();
+
+            var currentStart = SelectionEntrainement.DateHeure;
+            var newStart = currentStart.AddHours(delta);
+
+            var dayStartLimit = newStart.Date.AddHours(HEURE_DEBUT);
+            var dayEndLimit = newStart.Date.AddDays(1);
+            var durationMinutes = SelectionEntrainement.DureeMinutes;
+            var maxAllowedStart = dayEndLimit.AddMinutes(-durationMinutes);
+
+            if (dayStartLimit > maxAllowedStart)
+            {
+                SelectionEntrainement.DureeMinutes = Math.Max(0, (int)(dayEndLimit - dayStartLimit).TotalMinutes);
+                SelectionEntrainement.DateHeure = dayStartLimit;
+                _view.AlerteDepassementMinuit();
+                NotifierChangementPlanning();
+                return;
+            }
+
+            // Si on essaie de déplacer avant 06:00, afficher un popup via la vue.
+            if (newStart < dayStartLimit)
+            {
+                _view.AlerteAvantHeureDebut();
+                return;
+            }
+
+            if (newStart > maxAllowedStart)
+            {
+                _view.AlerteDepassementMinuit();
+                return;
+            }
+
+            SelectionEntrainement.DateHeure = newStart;
             NotifierChangementPlanning();
         }
 
@@ -252,8 +291,8 @@ namespace Mediatheque.ViewModel
         }
 
        
-        /// Force la durée à se terminer au plus tard à 23:59.
-       
+        /// Force la durée à se terminer au plus tard à minuit.
+      
         private bool ClampDurationToMidnight(EntrainementViewModel vm)
         {
             var minuit = vm.DateHeure.Date.AddDays(1);

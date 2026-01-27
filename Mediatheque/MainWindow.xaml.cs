@@ -69,18 +69,24 @@ namespace Mediatheque
 
         private void Window_Closed(object sender, EventArgs e) => _vm.Enregistrer();
 
-        public void InformationAjout() => MessageBox.Show("Entraînement ajouté avec succès.");
+        public void InformationAjout()
+        {
+            MessageBox.Show("Entraînement ajouté.", "Information", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
 
         public bool ConfirmationSuppression()
         {
-            return MessageBox.Show("Confirmez-vous la suppression ?", "Confirmation",
-                MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes;
+            return MessageBox.Show("Confirmez la suppression ?", "Confirmation", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes;
         }
 
         public void AlerteDepassementMinuit()
         {
-            MessageBox.Show("Les entraînements ne peuvent pas continuer après minuit !",
-                            "Attention", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show("L'entraînement dépasse minuit.", "Alerte", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+
+        public void AlerteAvantHeureDebut()
+        {
+            MessageBox.Show("Les entraînements ne peuvent pas commencer avant 06:00.", "Alerte", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
 
         // --- Gestion de la taille du planning pour le calcul du placement X ---

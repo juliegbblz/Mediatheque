@@ -528,7 +528,7 @@
                                         BorderThickness="0"
                                         Cursor="Hand"/>
 
-                                <Button Content="⬆️ +1h" 
+                                <Button Content="⬆️ -1h" 
                                         Command="{Binding DeplacerEntrainementPlusTotCommand}"
                                         Background="#FF2196F3"
                                         Foreground="White"
@@ -537,7 +537,7 @@
                                         BorderThickness="0"
                                         Cursor="Hand"/>
 
-                                <Button Content="⬇️ -1h" 
+                                <Button Content="⬇️ +1h" 
                                         Command="{Binding DeplacerEntrainementPlusTardCommand}"
                                         Background="#FF2196F3"
                                         Foreground="White"
