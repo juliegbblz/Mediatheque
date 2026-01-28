@@ -10,7 +10,9 @@ using System.Windows.Input;
 namespace Mediatheque.ViewModel
 {
     /// <summary>
-    /// Interface définissant les interactions UI déclenchées par le ViewModel.
+    /// Contrat minimal entre le ViewModel et la vue.
+    /// Permet de déclencher des interactions UI (messages, confirmations)
+    /// sans créer de dépendance directe vers WPF.
     /// </summary>
     public interface IMainView
     {
@@ -18,30 +20,54 @@ namespace Mediatheque.ViewModel
         bool ConfirmationSuppression();
         void AlerteDepassementMinuit();
 
-      
+        /// <summary>
+        /// Alerte lorsque l’heure de début est antérieure à l’ouverture du planning.
+        /// Implémentation optionnelle pour éviter d’imposer une méthode à la vue.
+        /// </summary>
         void AlerteAvantHeureDebut()
         {
-            // Implémentation par défaut : ne rien faire.
-          
         }
     }
 
     /// <summary>
-    /// ViewModel principal gérant la logique métier du calendrier et les opérations CRUD.
+    /// ViewModel principal de l’application.
+    /// Centralise :
+    /// - la logique métier du planning hebdomadaire
+    /// - la navigation temporelle
+    /// - la gestion des entraînements (CRUD)
+    /// - le calcul des données nécessaires à l’affichage graphique
     /// </summary>
     public class MainViewModel : ViewModelBase
     {
         private readonly MediathequeContext _context;
         private readonly IMainView _view;
 
+        /// <summary>
+        /// Lundi de la semaine actuellement affichée.
+        /// Sert de référence pour tous les calculs de dates.
+        /// </summary>
         private DateTime _debutSemaine;
+
+        /// <summary>
+        /// Paramètres fixes du planning graphique.
+        /// </summary>
         private const int HEURE_DEBUT = 6;
         private const int HAUTEUR_HEURE = 60;
         private const double LARGEUR_COLONNE_BASE = 95;
 
-        public ObservableCollection<EntrainementViewModel> Entrainements { get; } = new ObservableCollection<EntrainementViewModel>();
+        /// <summary>
+        /// Liste observable des entraînements.
+        /// Toute modification est automatiquement reflétée dans la vue.
+        /// </summary>
+        public ObservableCollection<EntrainementViewModel> Entrainements { get; }
+            = new ObservableCollection<EntrainementViewModel>();
 
         private double _largeurTotalePlanning;
+
+        /// <summary>
+        /// Largeur réelle du planning, fournie dynamiquement par la vue.
+        /// Utilisée pour adapter le rendu graphique lors des redimensionnements.
+        /// </summary>
         public double LargeurTotalePlanning
         {
             get => _largeurTotalePlanning;
@@ -56,10 +82,17 @@ namespace Mediatheque.ViewModel
             }
         }
 
+        /// <summary>
+        /// Catégories d’activités disponibles (chargées depuis la base).
+        /// </summary>
         public ObservableCollection<CategorieActivite> Categories { get; } = new();
 
-  
-        // --- Détection du jour actuel ---
+        #region Détection du jour courant
+
+        /// <summary>
+        /// Propriétés utilitaires permettant de mettre en évidence
+        /// le jour courant dans l’interface (ex : surbrillance).
+        /// </summary>
         public bool EstAujourdhuiLundi => DateTime.Today == DateLundi.Date;
         public bool EstAujourdhuiMardi => DateTime.Today == DateMardi.Date;
         public bool EstAujourdhuiMercredi => DateTime.Today == DateMercredi.Date;
@@ -68,9 +101,22 @@ namespace Mediatheque.ViewModel
         public bool EstAujourdhuiSamedi => DateTime.Today == DateSamedi.Date;
         public bool EstAujourdhuiDimanche => DateTime.Today == DateDimanche.Date;
 
+        #endregion
+
         private EntrainementViewModel? _selectionEntrainement;
 
-        public bool EstEnModeEdition => SelectionEntrainement != null && Entrainements.Contains(SelectionEntrainement);
+        /// <summary>
+        /// Indique si l’utilisateur est en train d’éditer
+        /// un entraînement déjà existant.
+        /// </summary>
+        public bool EstEnModeEdition =>
+            SelectionEntrainement != null &&
+            Entrainements.Contains(SelectionEntrainement);
+
+        /// <summary>
+        /// Entraînement actuellement sélectionné dans l’interface.
+        /// Sert de point d’entrée pour toutes les actions utilisateur.
+        /// </summary>
         public EntrainementViewModel? SelectionEntrainement
         {
             get => _selectionEntrainement;
@@ -80,7 +126,6 @@ namespace Mediatheque.ViewModel
                 OnPropertyChanged(nameof(SelectionEntrainement));
                 OnPropertyChanged(nameof(ValiderAjoutActif));
                 OnPropertyChanged(nameof(EstEnModeEdition));
-                // On notifie que le bouton supprimer doit aussi changer d'état
                 OnPropertyChanged(nameof(SupprimerEntrainementActif));
             }
         }
@@ -91,28 +136,45 @@ namespace Mediatheque.ViewModel
             _view = view;
             _debutSemaine = GetDebutSemaine(DateTime.Now);
 
-            // 1. Charger les catégories d'abord
+            // Chargement initial des catégories depuis la base
             Categories.Clear();
-            foreach (var c in _context.Categories) Categories.Add(c);
+            foreach (var c in _context.Categories)
+                Categories.Add(c);
 
-            // 2. Charger les entraînements AVEC leur catégorie (le .Include est vital)
-            var liste = _context.Entrainements.Include(e => e.Categorie).ToList();
+            // Chargement des entraînements avec leurs relations
+            var liste = _context.Entrainements
+                .Include(e => e.Categorie)
+                .ToList();
+
             foreach (var e in liste)
-            {
                 Entrainements.Add(new EntrainementViewModel(e));
-            }
 
-            Entrainements.CollectionChanged += (s, e) => NotifierChangementPlanning();
+            // Toute modification de la collection implique un recalcul du planning
+            Entrainements.CollectionChanged += (_, __) =>
+                NotifierChangementPlanning();
         }
 
+        /// <summary>
+        /// Calcule le lundi correspondant à la semaine d’une date donnée.
+        /// Garantit une navigation cohérente par semaines complètes.
+        /// </summary>
         private DateTime GetDebutSemaine(DateTime date)
         {
             int diff = (7 + (date.DayOfWeek - DayOfWeek.Monday)) % 7;
             return date.AddDays(-diff).Date;
         }
 
-        // --- Propriétés de gestion des dates ---
-        public string SemaineAffichee => $"Semaine du {_debutSemaine:dd/MM/yyyy} au {_debutSemaine.AddDays(6):dd/MM/yyyy}";
+        #region Gestion des dates affichées
+
+        /// <summary>
+        /// Libellé textuel de la semaine affichée.
+        /// </summary>
+        public string SemaineAffichee =>
+            $"Semaine du {_debutSemaine:dd/MM/yyyy} au {_debutSemaine.AddDays(6):dd/MM/yyyy}";
+
+        /// <summary>
+        /// Dates correspondant à chaque colonne du planning.
+        /// </summary>
         public DateTime DateLundi => _debutSemaine;
         public DateTime DateMardi => _debutSemaine.AddDays(1);
         public DateTime DateMercredi => _debutSemaine.AddDays(2);
@@ -121,14 +183,24 @@ namespace Mediatheque.ViewModel
         public DateTime DateSamedi => _debutSemaine.AddDays(5);
         public DateTime DateDimanche => _debutSemaine.AddDays(6);
 
-       
-        /// Calcule les positions graphiques des entraînements en gérant les collisions par intersection de plages horaires.
-    
+        #endregion
+
+        /// <summary>
+        /// Génère les ViewModels enrichis pour l’affichage graphique.
+        /// Calcule :
+        /// - la position verticale (heure)
+        /// - la position horizontale (jour + chevauchements)
+        /// - la taille des blocs
+        /// </summary>
         public IEnumerable<EntrainementViewModelAvecPosition> EntrainementsSemaine
         {
             get
             {
-                double largeurUneColonne = LargeurTotalePlanning > 0 ? (LargeurTotalePlanning / 7) : LARGEUR_COLONNE_BASE;
+                double largeurUneColonne =
+                    LargeurTotalePlanning > 0
+                        ? LargeurTotalePlanning / 7
+                        : LARGEUR_COLONNE_BASE;
+
                 var finSemaine = _debutSemaine.AddDays(7);
 
                 var inWeek = Entrainements
@@ -137,7 +209,10 @@ namespace Mediatheque.ViewModel
                     .ToList();
 
                 var result = new List<EntrainementViewModelAvecPosition>();
-                var groupedByDay = inWeek.GroupBy(e => ((int)e.DateHeure.DayOfWeek + 6) % 7);
+
+                // Regroupement par jour afin de gérer les collisions horaires
+                var groupedByDay =
+                    inWeek.GroupBy(e => ((int)e.DateHeure.DayOfWeek + 6) % 7);
 
                 foreach (var dayGroup in groupedByDay)
                 {
@@ -145,29 +220,51 @@ namespace Mediatheque.ViewModel
 
                     foreach (var entr in dayList)
                     {
-                        // Détection de collision : deux entraînements se chevauchent si l'un commence avant que l'autre ne finisse.
+                        // Détection des séances qui se chevauchent temporellement
                         var collisions = dayList.Where(other =>
                             entr.DateHeure < other.DateHeure.AddMinutes(other.DureeMinutes) &&
-                            entr.DateHeure.AddMinutes(entr.DureeMinutes) > other.DateHeure).ToList();
+                            entr.DateHeure.AddMinutes(entr.DureeMinutes) > other.DateHeure)
+                            .ToList();
 
                         int totalCount = collisions.Count;
                         int currentIdx = collisions.IndexOf(entr);
 
                         result.Add(new EntrainementViewModelAvecPosition(
-                            entr, _debutSemaine, HEURE_DEBUT, HAUTEUR_HEURE,
-                            largeurUneColonne, currentIdx, totalCount));
+                            entr,
+                            _debutSemaine,
+                            HEURE_DEBUT,
+                            HAUTEUR_HEURE,
+                            largeurUneColonne,
+                            currentIdx,
+                            totalCount));
                     }
                 }
+
                 return result;
             }
         }
 
-        public IEnumerable<EntrainementViewModel> EntrainementsOrdonnes => Entrainements.OrderBy(e => e.DateHeure);
+        /// <summary>
+        /// Entraînements triés chronologiquement,
+        /// utilisés pour les listes textuelles.
+        /// </summary>
+        public IEnumerable<EntrainementViewModel> EntrainementsOrdonnes =>
+            Entrainements.OrderBy(e => e.DateHeure);
 
-        // --- Navigation temporelle ---
-        public ICommand SemainePrecedenteCommand => new RelayCommand(() => ChangerSemaine(-7));
-        public ICommand SemaineSuivanteCommand => new RelayCommand(() => ChangerSemaine(7));
-        public ICommand AujourdhuiCommand => new RelayCommand(() => { _debutSemaine = GetDebutSemaine(DateTime.Now); RafraichirTout(); });
+        #region Navigation temporelle
+       
+        public ICommand SemainePrecedenteCommand =>
+            new RelayCommand(() => ChangerSemaine(-7));
+
+        public ICommand SemaineSuivanteCommand =>
+            new RelayCommand(() => ChangerSemaine(7));
+
+        public ICommand AujourdhuiCommand =>
+            new RelayCommand(() =>
+            {
+                _debutSemaine = GetDebutSemaine(DateTime.Now);
+                RafraichirTout();
+            });
 
         private void ChangerSemaine(int jours)
         {
@@ -178,23 +275,29 @@ namespace Mediatheque.ViewModel
         private void RafraichirTout()
         {
             OnPropertyChanged(nameof(SemaineAffichee), nameof(EntrainementsSemaine));
-            OnPropertyChanged(nameof(DateLundi), nameof(DateMardi), nameof(DateMercredi), nameof(DateJeudi), nameof(DateVendredi), nameof(DateSamedi), nameof(DateDimanche));
-            OnPropertyChanged(nameof(EstAujourdhuiLundi), nameof(EstAujourdhuiMardi), nameof(EstAujourdhuiMercredi), nameof(EstAujourdhuiJeudi), nameof(EstAujourdhuiVendredi), nameof(EstAujourdhuiSamedi), nameof(EstAujourdhuiDimanche));
+            OnPropertyChanged(
+                nameof(DateLundi), nameof(DateMardi), nameof(DateMercredi),
+                nameof(DateJeudi), nameof(DateVendredi),
+                nameof(DateSamedi), nameof(DateDimanche));
+            OnPropertyChanged(
+                nameof(EstAujourdhuiLundi), nameof(EstAujourdhuiMardi),
+                nameof(EstAujourdhuiMercredi), nameof(EstAujourdhuiJeudi),
+                nameof(EstAujourdhuiVendredi), nameof(EstAujourdhuiSamedi),
+                nameof(EstAujourdhuiDimanche));
         }
 
-        // --- Gestion des Entraînements (CRUD) ---
+        #endregion
 
+        #region CRUD Entraînements
 
-        /// Initialise un nouvel objet d'entraînement temporaire pour l'édition.
+        public ICommand AjouterEntrainementCommand => new RelayCommand(() =>
+        {
+            DateTime jourBase =
+                (DateTime.Now >= _debutSemaine &&
+                 DateTime.Now < _debutSemaine.AddDays(7))
+                ? DateTime.Today
+                : _debutSemaine;
 
-
-        public ICommand AjouterEntrainementCommand => new RelayCommand(() => {
-            // On prend la date du jour (ou du début de semaine si on est ailleurs)
-            DateTime jourBase = (DateTime.Now >= _debutSemaine && DateTime.Now < _debutSemaine.AddDays(7))
-                                ? DateTime.Today
-                                : _debutSemaine;
-
-            // On force 18h systématiquement pour le nouveau bouton
             DateTime dateHeureFixe = jourBase.Date.AddHours(18);
 
             var e = new Entrainement
@@ -206,65 +309,64 @@ namespace Mediatheque.ViewModel
                 Categorie = Categories.FirstOrDefault()
             };
 
-            if (e.Categorie != null) e.CategorieActiviteId = e.Categorie.Id;
+            if (e.Categorie != null)
+                e.CategorieActiviteId = e.Categorie.Id;
+
             SelectionEntrainement = new EntrainementViewModel(e);
-        }); 
+        });
 
-
-        /// Enregistre l'entraînement créé dans la base de données et l'ajoute à la vue.
-
-        public ICommand ValiderAjoutCommand => new RelayCommand(() => {
+        public ICommand ValiderAjoutCommand => new RelayCommand(() =>
+        {
             if (SelectionEntrainement == null) return;
 
-            if (ClampDurationToMidnight(SelectionEntrainement)) _view.AlerteDepassementMinuit();
+            if (ClampDurationToMidnight(SelectionEntrainement))
+                _view.AlerteDepassementMinuit();
 
-            // On récupère le modèle qui est DÉJÀ dans le SelectionEntrainement
             var modele = SelectionEntrainement.Modele;
-
             modele.Id = 0;
-            _context.Entrainements.Add(modele);
-            _context.SaveChanges(); // On sauvegarde tout de suite pour avoir l'ID
 
-            Entrainements.Add(SelectionEntrainement); // On ajoute le VM existant
+            _context.Entrainements.Add(modele);
+            _context.SaveChanges();
+
+            Entrainements.Add(SelectionEntrainement);
             SelectionEntrainement = null;
             _view.InformationAjout();
         });
 
-        public bool ValiderAjoutActif
-        {
-            get
-            {
-                // Le bouton "Valider l'ajout" doit être visible si :
-                // 1. On a une sélection
-                // 2. ET que cette sélection n'existe pas encore dans la liste officielle
-                return SelectionEntrainement != null && !Entrainements.Contains(SelectionEntrainement);
-            }
-        }
+        public bool ValiderAjoutActif =>
+            SelectionEntrainement != null &&
+            !Entrainements.Contains(SelectionEntrainement);
 
-        public ICommand TerminerEditionCommand => new RelayCommand(() => {
-            if (SelectionEntrainement != null && Entrainements.Contains(SelectionEntrainement))
+        public ICommand TerminerEditionCommand => new RelayCommand(() =>
+        {
+            if (SelectionEntrainement != null &&
+                Entrainements.Contains(SelectionEntrainement))
             {
-                if (ClampDurationToMidnight(SelectionEntrainement)) _view.AlerteDepassementMinuit();
+                if (ClampDurationToMidnight(SelectionEntrainement))
+                    _view.AlerteDepassementMinuit();
+
                 _context.SaveChanges();
             }
+
             SelectionEntrainement = null;
             NotifierChangementPlanning();
         });
 
-        public ICommand SupprimerEntrainementCommand => new RelayCommand(() => {
-            // 1. Vérification de sécurité
-            if (SelectionEntrainement == null || !_view.ConfirmationSuppression()) return;
+        public ICommand SupprimerEntrainementCommand => new RelayCommand(() =>
+        {
+            if (SelectionEntrainement == null ||
+                !_view.ConfirmationSuppression())
+                return;
 
             var vmASupprimer = SelectionEntrainement;
             var modele = vmASupprimer.Modele;
 
             try
             {
-                // 2. Si l'objet existe en base de données (Id != 0)
                 if (modele.Id != 0)
                 {
-                    // On récupère l'entité fraîchement depuis le contexte pour être sûr qu'elle existe
-                    var entityInDb = _context.Entrainements.Find(modele.Id);
+                    var entityInDb =
+                        _context.Entrainements.Find(modele.Id);
 
                     if (entityInDb != null)
                     {
@@ -273,17 +375,12 @@ namespace Mediatheque.ViewModel
                     }
                 }
 
-                // 3. Mise à jour de l'interface (UI)
                 Entrainements.Remove(vmASupprimer);
                 SelectionEntrainement = null;
-
-                // Notifier la vue pour rafraîchir le planning graphique
                 NotifierChangementPlanning();
             }
             catch (DbUpdateConcurrencyException)
             {
-                // Si l'erreur arrive quand même (ex: supprimé par un autre processus entre temps)
-                // On retire simplement l'élément de la liste locale pour synchroniser l'affichage
                 Entrainements.Remove(vmASupprimer);
                 SelectionEntrainement = null;
                 NotifierChangementPlanning();
@@ -292,68 +389,87 @@ namespace Mediatheque.ViewModel
 
         public bool SupprimerEntrainementActif => EstEnModeEdition;
 
-        // --- Déplacement rapide ---
-        public ICommand DeplacerEntrainementPlusTardCommand => new RelayCommand(() => ModifierHeure(1));
-        public ICommand DeplacerEntrainementPlusTotCommand => new RelayCommand(() => ModifierHeure(-1));
+        #endregion
 
+        #region Déplacement rapide
 
-        /// Modifie l'heure de début tout en respectant les limites de la plage horaire affichée.
+        public ICommand DeplacerEntrainementPlusTardCommand =>
+            new RelayCommand(() => ModifierHeure(1));
 
+        public ICommand DeplacerEntrainementPlusTotCommand =>
+            new RelayCommand(() => ModifierHeure(-1));
+
+        /// <summary>
+        /// Décale l’heure de début tout en respectant
+        /// les limites horaires (ouverture / minuit).
+        /// </summary>
         private void ModifierHeure(int delta)
         {
             if (SelectionEntrainement == null) return;
 
-            // 1. Calculer le nouveau début potentiel
-            DateTime nouveauDebut = SelectionEntrainement.DateHeure.AddHours(delta);
+            DateTime nouveauDebut =
+                SelectionEntrainement.DateHeure.AddHours(delta);
 
-            // 2. Récupérer la date d'origine (le jour où la séance a commencé)
-            DateTime jourOrigine = SelectionEntrainement.DateHeure.Date;
+            DateTime jourOrigine =
+                SelectionEntrainement.DateHeure.Date;
 
-            // --- CAS A : On essaie de passer au lendemain (Heure >= 24:00) ---
-            if (nouveauDebut.Date > jourOrigine)
-            {
-                _view.AlerteDepassementMinuit();
-                return;
-            }
-
-            // --- CAS B : On essaie de rester sur le même jour mais avant 06:00 ---
-            DateTime limiteOuverture = jourOrigine.AddHours(HEURE_DEBUT);
-            if (nouveauDebut < limiteOuverture)
+            if (nouveauDebut < jourOrigine.AddHours(HEURE_DEBUT))
             {
                 _view.AlerteAvantHeureDebut();
                 return;
             }
 
-            // 3. Si on passe les tests, on applique le changement
-            SelectionEntrainement.DateHeure = nouveauDebut;
-
-            // 4. Vérifier si la DURÉE (ex: 90min à 23h) fait déborder après minuit
-            if (ClampDurationToMidnight(SelectionEntrainement))
+            if (nouveauDebut.AddMinutes(SelectionEntrainement.DureeMinutes)
+                > jourOrigine.AddDays(1))
             {
                 _view.AlerteDepassementMinuit();
+                return;
             }
 
+            SelectionEntrainement.DateHeure = nouveauDebut;
             NotifierChangementPlanning();
         }
 
-        public ICommand SelectionnerEntrainementCommand => new RelayCommand<EntrainementViewModelAvecPosition>(e => {
-            if (e != null) SelectionEntrainement = e.Entrainement;
-        });
+        #endregion
+
+        public ICommand SelectionnerEntrainementCommand =>
+            new RelayCommand<EntrainementViewModelAvecPosition>(e =>
+            {
+                if (e != null)
+                {
+                    var m = e.Entrainement.Modele;
+
+                    _donneesAvantEdition = new Entrainement
+                    {
+                        Activite = m.Activite,
+                        Lieu = m.Lieu,
+                        DateHeure = m.DateHeure,
+                        DureeMinutes = m.DureeMinutes,
+                        CategorieActiviteId = m.CategorieActiviteId,
+                        Categorie = m.Categorie
+                    };
+
+                    SelectionEntrainement = e.Entrainement;
+                }
+            });
 
         public void Enregistrer() => _context.SaveChanges();
 
         public void NotifierChangementPlanning()
         {
-            OnPropertyChanged(nameof(EntrainementsSemaine), nameof(EntrainementsOrdonnes));
+            OnPropertyChanged(
+                nameof(EntrainementsSemaine),
+                nameof(EntrainementsOrdonnes));
         }
 
-       
-        /// Force la durée à se terminer au plus tard à minuit.
-      
+        /// <summary>
+        /// Ajuste la durée pour garantir une fin au plus tard à minuit.
+        /// </summary>
         private bool ClampDurationToMidnight(EntrainementViewModel vm)
         {
             var minuit = vm.DateHeure.Date.AddDays(1);
-            int minutesMax = (int)Math.Max(0, (minuit - vm.DateHeure).TotalMinutes);
+            int minutesMax =
+                (int)Math.Max(0, (minuit - vm.DateHeure).TotalMinutes);
 
             if (vm.DureeMinutes > minutesMax)
             {
@@ -365,10 +481,25 @@ namespace Mediatheque.ViewModel
 
         public ICommand AnnulerCommande => new RelayCommand(() =>
         {
+            if (SelectionEntrainement != null &&
+                _donneesAvantEdition != null)
+            {
+                var m = SelectionEntrainement.Modele;
+
+                m.Activite = _donneesAvantEdition.Activite;
+                m.Lieu = _donneesAvantEdition.Lieu;
+                m.DateHeure = _donneesAvantEdition.DateHeure;
+                m.DureeMinutes = _donneesAvantEdition.DureeMinutes;
+                m.CategorieActiviteId = _donneesAvantEdition.CategorieActiviteId;
+                m.Categorie = _donneesAvantEdition.Categorie;
+
+                SelectionEntrainement.NotifierTout();
+            }
+
             SelectionEntrainement = null;
-            // On notifie le planning pour qu'il recalcule les positions 
-            // et reprenne toute la largeur des colonnes
             NotifierChangementPlanning();
         });
+
+        private Entrainement _donneesAvantEdition;
     }
 }

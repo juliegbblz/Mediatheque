@@ -4,7 +4,9 @@ using System;
 namespace Mediatheque.ViewModel
 {
     /// <summary>
-    /// Gère la logique métier d'une séance (validation horaire) et la notification de l'interface.
+    /// ViewModel représentant un entraînement.
+    /// Encapsule le modèle de données et applique les règles métier
+    /// tout en notifiant l’interface des changements.
     /// </summary>
     public class EntrainementViewModel : ViewModelBase
     {
@@ -15,12 +17,28 @@ namespace Mediatheque.ViewModel
             _modele = modele;
         }
 
+        /// <summary>
+        /// Accès direct au modèle EF sous-jacent.
+        /// Utile pour les opérations de persistance.
+        /// </summary>
         public Entrainement Modele => _modele;
 
-        #region Propriétés de Catégorie
+        #region Catégorie
+
+        /// <summary>
+        /// Couleur associée à la catégorie (fallback gris si absente).
+        /// </summary>
         public string Couleur => Modele.Categorie?.CouleurHex ?? "#808080";
+
+        /// <summary>
+        /// Nom lisible de la catégorie.
+        /// </summary>
         public string NomCategorie => Modele.Categorie?.Nom ?? "Sans catégorie";
 
+        /// <summary>
+        /// Catégorie sélectionnée pour l’entraînement.
+        /// Met à jour l’ID relationnel côté modèle.
+        /// </summary>
         public CategorieActivite Categorie
         {
             get => _modele.Categorie;
@@ -37,9 +55,14 @@ namespace Mediatheque.ViewModel
                 }
             }
         }
+
         #endregion
 
-        #region Propriétés Métier
+        #region Propriétés métier
+
+        /// <summary>
+        /// Nom ou type d’activité pratiquée.
+        /// </summary>
         public string Activite
         {
             get => _modele.Activite;
@@ -50,6 +73,10 @@ namespace Mediatheque.ViewModel
             }
         }
 
+        /// <summary>
+        /// Date et heure de début de la séance.
+        /// Préserve l’heure existante lorsqu’un DatePicker renvoie minuit.
+        /// </summary>
         public DateTime DateHeure
         {
             get => _modele.DateHeure;
@@ -57,9 +84,8 @@ namespace Mediatheque.ViewModel
             {
                 if (_modele.DateHeure != value)
                 {
-                    // On ne change l'heure que si la valeur entrante possède une heure (différente de 00:00)
-                    // Sinon, si c'est un DatePicker qui envoie minuit, on garde l'heure actuelle du modèle
-                    if (value.TimeOfDay == TimeSpan.Zero && _modele.DateHeure.TimeOfDay != TimeSpan.Zero)
+                    if (value.TimeOfDay == TimeSpan.Zero &&
+                        _modele.DateHeure.TimeOfDay != TimeSpan.Zero)
                     {
                         _modele.DateHeure = value.Date.Add(_modele.DateHeure.TimeOfDay);
                     }
@@ -69,12 +95,14 @@ namespace Mediatheque.ViewModel
                     }
 
                     OnPropertyChanged(nameof(DateHeure));
-                    // Très important pour mettre à jour le texte de description en même temps
                     OnPropertyChanged(nameof(Description));
                 }
             }
         }
 
+        /// <summary>
+        /// Lieu de l’entraînement.
+        /// </summary>
         public string Lieu
         {
             get => _modele.Lieu;
@@ -85,12 +113,15 @@ namespace Mediatheque.ViewModel
             }
         }
 
+        /// <summary>
+        /// Durée en minutes.
+        /// Est automatiquement bornée pour éviter tout dépassement après minuit.
+        /// </summary>
         public int DureeMinutes
         {
             get => _modele.DureeMinutes;
             set
             {
-                // Limite la durée pour que la séance ne dépasse jamais minuit
                 int maxMinutes = GetMinutesUntilMidnight(_modele.DateHeure);
                 int clamped = Math.Min(Math.Max(0, value), maxMinutes);
 
@@ -102,11 +133,26 @@ namespace Mediatheque.ViewModel
             }
         }
 
-        public string Description => $"{DateHeure:dd/MM/yyyy HH:mm} - {Activite} @ {Lieu}";
+        /// <summary>
+        /// Force la notification de toutes les propriétés.
+        /// Utile lors de rafraîchissements globaux de l’affichage.
+        /// </summary>
+        public void NotifierTout()
+        {
+            OnPropertyChanged(string.Empty);
+        }
+
+        /// <summary>
+        /// Texte synthétique utilisé dans les listes ou info-bulles.
+        /// </summary>
+        public string Description =>
+            $"{DateHeure:dd/MM/yyyy HH:mm} - {Activite} @ {Lieu}";
+
         #endregion
 
         /// <summary>
-        /// Calcule le nombre de minutes restantes jusqu'à la fin de la journée (23:59:59).
+        /// Calcule le nombre maximal de minutes possibles
+        /// avant la fin de la journée.
         /// </summary>
         private int GetMinutesUntilMidnight(DateTime dt)
         {
@@ -116,19 +162,25 @@ namespace Mediatheque.ViewModel
     }
 
     /// <summary>
-    /// Calcule les coordonnées de rendu (X, Y, Taille) pour l'affichage graphique dans le calendrier.
+    /// Enveloppe graphique d’un entraînement.
+    /// Fournit les coordonnées et dimensions nécessaires
+    /// à l’affichage dans un planning (Canvas).
     /// </summary>
     public class EntrainementViewModelAvecPosition
     {
         public EntrainementViewModel Entrainement { get; }
 
-        // Propriétés de rendu pour le Canvas XAML
+        /// <summary>
+        /// Coordonnées calculées pour le rendu XAML.
+        /// </summary>
         public double PositionX { get; }
         public double PositionY { get; }
         public double Largeur { get; }
         public double Hauteur { get; }
 
-        // Raccourcis de données
+        /// <summary>
+        /// Accès direct aux données utiles pour le binding.
+        /// </summary>
         public string Activite => Entrainement.Activite;
         public DateTime DateHeure => Entrainement.DateHeure;
         public string Lieu => Entrainement.Lieu;
@@ -146,21 +198,31 @@ namespace Mediatheque.ViewModel
         {
             Entrainement = entrainement;
 
-            // Calcul du jour (Lundi = 0)
-            int jourSemaine = ((int)entrainement.DateHeure.DayOfWeek + 6) % 7;
+            // Jour de la semaine normalisé (lundi = 0)
+            int jourSemaine =
+                ((int)entrainement.DateHeure.DayOfWeek + 6) % 7;
 
-            // Calcul horizontal (gestion des chevauchements de séances)
+            // Répartition horizontale pour gérer les chevauchements
             double largeurDisponible = largeurColonne / colonnesTotal;
             Largeur = largeurDisponible - 4;
-            PositionX = (jourSemaine * largeurColonne) + (colonneIndex * largeurDisponible);
+            PositionX =
+                (jourSemaine * largeurColonne) +
+                (colonneIndex * largeurDisponible);
 
-            // Calcul vertical (position par rapport à l'heure d'ouverture du planning)
-            double heureDecimale = entrainement.DateHeure.Hour + entrainement.DateHeure.Minute / 60.0;
-            double heuresDepuisDebutAffichage = heureDecimale - heureDebut;
-            PositionY = Math.Max(0, heuresDepuisDebutAffichage * hauteurHeure);
+            // Position verticale relative à l’heure de début du planning
+            double heureDecimale =
+                entrainement.DateHeure.Hour +
+                entrainement.DateHeure.Minute / 60.0;
 
-            // Hauteur proportionnelle au temps (ex: 1h = 60px)
-            Hauteur = (entrainement.DureeMinutes / 60.0) * hauteurHeure - 4;
+            double heuresDepuisDebutAffichage =
+                heureDecimale - heureDebut;
+
+            PositionY =
+                Math.Max(0, heuresDepuisDebutAffichage * hauteurHeure);
+
+            // Hauteur proportionnelle à la durée
+            Hauteur =
+                (entrainement.DureeMinutes / 60.0) * hauteurHeure - 4;
         }
     }
 }

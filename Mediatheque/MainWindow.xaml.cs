@@ -8,10 +8,10 @@ using System.Linq;
 
 namespace Mediatheque
 {
-
     /// <summary>
-    /// Logique d'interaction de la fenêtre principale. 
-    /// Assure le pont entre le ViewModel et les contrôles WPF spécifiques.
+    /// Fenêtre principale WPF.
+    /// Sert d’interface entre le ViewModel (logique applicative)
+    /// et les contrôles spécifiques à WPF (ComboBox, événements, Dispatcher…).
     /// </summary>
     public partial class MainWindow : Window, IMainView
     {
@@ -21,24 +21,28 @@ namespace Mediatheque
         {
             InitializeComponent();
 
-            // Configuration explicite avec le type du contexte
+            // Création manuelle du DbContext afin de contrôler explicitement
+            // la configuration et le cycle de vie de la base de données
             var options = new DbContextOptionsBuilder<MediathequeContext>()
                 .UseSqlite("Data Source=mediatheque.db")
                 .Options;
 
             var context = new MediathequeContext(options);
 
-            // Applique les migrations (crée la base si elle n'existe pas ou ajoute les colonnes manquantes)
+            // Synchronise le schéma de la base avec le modèle (création / migrations)
             context.Database.Migrate();
 
             _vm = new MainViewModel(context, this);
             DataContext = _vm;
 
+            // Écoute les changements de propriétés du ViewModel
             _vm.PropertyChanged += Vm_PropertyChanged;
         }
 
-        /// Synchronise les ComboBox de l'interface quand l'utilisateur sélectionne un entraînement
-
+        /// <summary>
+        /// Met à jour manuellement certaines ComboBox lorsque
+        /// l’entraînement sélectionné change côté ViewModel.
+        /// </summary>
         private void Vm_PropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
             if (e.PropertyName == nameof(MainViewModel.SelectionEntrainement))
@@ -48,7 +52,7 @@ namespace Mediatheque
                     var sel = _vm.SelectionEntrainement;
                     if (sel == null) return;
 
-                    // Synchronisation manuelle des index pour Heure, Minute et Durée
+                    // Repositionne les ComboBox sur les valeurs de l’entraînement sélectionné
                     SyncComboByTag(HeureDebut, sel.DateHeure.Hour);
                     SyncComboByTag(MinuteDebut, sel.DateHeure.Minute);
 
@@ -58,53 +62,83 @@ namespace Mediatheque
             }
         }
 
-      
-        /// Utilitaire pour sélectionner l'item d'une ComboBox basé sur la valeur de son Tag
-
+        /// <summary>
+        /// Sélectionne dans une ComboBox l’item dont la propriété Tag
+        /// correspond à la valeur fournie.
+        /// </summary>
         private void SyncComboByTag(ComboBox combo, int value)
         {
             if (combo == null) return;
+
             var item = combo.Items.OfType<ComboBoxItem>()
-                            .FirstOrDefault(i => i.Tag != null && Convert.ToInt32(i.Tag) == value);
-            if (item != null) combo.SelectedItem = item;
+                .FirstOrDefault(i => i.Tag != null && Convert.ToInt32(i.Tag) == value);
+
+            if (item != null)
+                combo.SelectedItem = item;
         }
 
         private void Window_Closed(object sender, EventArgs e) => _vm.Enregistrer();
 
         public void InformationAjout()
         {
-            MessageBox.Show("Entraînement ajouté.", "Information", MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show(
+                "Entraînement ajouté.",
+                "Information",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information
+            );
         }
 
         public bool ConfirmationSuppression()
         {
-            return MessageBox.Show("Confirmez la suppression ?", "Confirmation", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes;
+            return MessageBox.Show(
+                "Confirmez la suppression ?",
+                "Confirmation",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Question
+            ) == MessageBoxResult.Yes;
         }
 
         public void AlerteDepassementMinuit()
         {
-            MessageBox.Show("Les entraînements ne peuvent pas dépasser minuit.", "Alerte", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show(
+                "Les entraînements ne peuvent pas dépasser minuit.",
+                "Alerte",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning
+            );
         }
 
         public void AlerteAvantHeureDebut()
         {
-            MessageBox.Show("Les entraînements ne peuvent pas commencer avant 06:00.", "Alerte", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show(
+                "Les entraînements ne peuvent pas commencer avant 06:00.",
+                "Alerte",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning
+            );
         }
 
-        // --- Gestion de la taille du planning pour le calcul du placement X ---
-
+        /// <summary>
+        /// Récupère la largeur réelle du planning pour permettre
+        /// le calcul dynamique du positionnement horizontal des éléments.
+        /// </summary>
         private void PlanningItemsControl_SizeChanged(object sender, SizeChangedEventArgs e)
         {
-            if (DataContext is MainViewModel vm) vm.LargeurTotalePlanning = e.NewSize.Width;
+            if (DataContext is MainViewModel vm)
+                vm.LargeurTotalePlanning = e.NewSize.Width;
         }
 
         private void PlanningGrid_SizeChanged(object sender, SizeChangedEventArgs e)
         {
-            if (DataContext is MainViewModel vm) vm.LargeurTotalePlanning = e.NewSize.Width;
+            if (DataContext is MainViewModel vm)
+                vm.LargeurTotalePlanning = e.NewSize.Width;
         }
 
-        // --- Événements de modification via les ComboBox ---
-
+        /// <summary>
+        /// Modifie l’heure de début de l’entraînement sélectionné
+        /// à partir de la ComboBox correspondante.
+        /// </summary>
         private void HeureDebut_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (DataContext is MainViewModel vm && vm.SelectionEntrainement != null)
@@ -113,7 +147,9 @@ namespace Mediatheque
                 {
                     int heure = Convert.ToInt32(item.Tag);
                     var d = vm.SelectionEntrainement.DateHeure;
-                    vm.SelectionEntrainement.DateHeure = new DateTime(d.Year, d.Month, d.Day, heure, d.Minute, 0);
+
+                    vm.SelectionEntrainement.DateHeure =
+                        new DateTime(d.Year, d.Month, d.Day, heure, d.Minute, 0);
 
                     VerifierLimiteMinuit(vm);
                     vm.NotifierChangementPlanning();
@@ -121,6 +157,9 @@ namespace Mediatheque
             }
         }
 
+        /// <summary>
+        /// Modifie les minutes de début de l’entraînement sélectionné.
+        /// </summary>
         private void MinuteDebut_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (DataContext is MainViewModel vm && vm.SelectionEntrainement != null)
@@ -129,7 +168,9 @@ namespace Mediatheque
                 {
                     int minute = Convert.ToInt32(item.Tag);
                     var d = vm.SelectionEntrainement.DateHeure;
-                    vm.SelectionEntrainement.DateHeure = new DateTime(d.Year, d.Month, d.Day, d.Hour, minute, 0);
+
+                    vm.SelectionEntrainement.DateHeure =
+                        new DateTime(d.Year, d.Month, d.Day, d.Hour, minute, 0);
 
                     VerifierLimiteMinuit(vm);
                     vm.NotifierChangementPlanning();
@@ -137,24 +178,32 @@ namespace Mediatheque
             }
         }
 
+        /// <summary>
+        /// Gère la modification de la durée en empêchant
+        /// tout dépassement au-delà de minuit.
+        /// </summary>
         private void Duree_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (!(DataContext is MainViewModel vm) || vm.SelectionEntrainement == null) return;
+            if (!(DataContext is MainViewModel vm) || vm.SelectionEntrainement == null)
+                return;
 
             if (sender is ComboBox combo && combo.SelectedItem is ComboBoxItem item)
             {
                 int demandee = Convert.ToInt32(item.Tag);
                 var debut = vm.SelectionEntrainement.DateHeure;
-                int minutesRestantes = (int)Math.Max(0, (debut.Date.AddDays(1) - debut).TotalMinutes);
+
+                int minutesRestantes =
+                    (int)Math.Max(0, (debut.Date.AddDays(1) - debut).TotalMinutes);
 
                 if (demandee > minutesRestantes)
                 {
                     AlerteDepassementMinuit();
-                    // Sélection de la durée maximale autorisée
+
+                    // Recherche de la plus grande durée autorisée inférieure à la limite
                     var meilleureOption = combo.Items.OfType<ComboBoxItem>()
-                                         .Select(i => new { Item = i, Val = Convert.ToInt32(i.Tag) })
-                                         .OrderByDescending(x => x.Val)
-                                         .FirstOrDefault(x => x.Val <= minutesRestantes);
+                        .Select(i => new { Item = i, Val = Convert.ToInt32(i.Tag) })
+                        .OrderByDescending(x => x.Val)
+                        .FirstOrDefault(x => x.Val <= minutesRestantes);
 
                     if (meilleureOption != null)
                     {
@@ -162,14 +211,22 @@ namespace Mediatheque
                         vm.SelectionEntrainement.DureeMinutes = meilleureOption.Val;
                     }
                 }
+
                 vm.NotifierChangementPlanning();
             }
         }
 
+        /// <summary>
+        /// Vérifie que la durée actuelle ne provoque pas
+        /// un dépassement après minuit et ajuste si nécessaire.
+        /// </summary>
         private void VerifierLimiteMinuit(MainViewModel vm)
         {
             var debut = vm.SelectionEntrainement.DateHeure;
-            int minutesRestantes = (int)Math.Max(0, (debut.Date.AddDays(1) - debut).TotalMinutes);
+
+            int minutesRestantes =
+                (int)Math.Max(0, (debut.Date.AddDays(1) - debut).TotalMinutes);
+
             if (vm.SelectionEntrainement.DureeMinutes > minutesRestantes)
             {
                 vm.SelectionEntrainement.DureeMinutes = minutesRestantes;

@@ -15,8 +15,6 @@ namespace Mediatheque.Data
         public DateTime DateHeure { get; set; }
 
         public string Lieu { get; set; } = string.Empty;
-
-        //Durée en minutes       
         public int DureeMinutes { get; set; }
 
         //Clés étrangères
