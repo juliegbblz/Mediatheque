@@ -336,7 +336,7 @@
                                             <!-- Garder un seul StackPanel ici -->
                                             <StackPanel Margin="4">
                                                 <TextBlock Text="{Binding Activite}" FontWeight="Bold" Foreground="White"/>
-                                                <TextBlock Text="{Binding Modele.Categorie.Nom}" FontSize="8" Foreground="WhiteSmoke" Opacity="0.8"/>
+                                                <TextBlock Text="{Binding Entrainement.Categorie.Nom}" FontSize="8" Foreground="WhiteSmoke" Opacity="0.8"/>
                                                 <TextBlock Text="{Binding DateHeure, StringFormat=HH:mm}" FontSize="10" Foreground="White"/>
                                                 <TextBlock Text="{Binding Lieu}" FontSize="9" Foreground="WhiteSmoke" TextWrapping="Wrap"/>
                                             </StackPanel>
@@ -394,7 +394,7 @@
                             <TextBlock Text="Type d'entraînement :" 
                                        FontWeight="SemiBold" 
                                        Margin="0,0,0,4"/>
-                            <ComboBox Text="{Binding SelectionEntrainement.Activite, Mode=TwoWay}"
+                            <ComboBox Text="{Binding SelectionEntrainement.Activite, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                       IsEditable="True"
                                       Margin="0,0,0,12"
                                       Padding="8,6">

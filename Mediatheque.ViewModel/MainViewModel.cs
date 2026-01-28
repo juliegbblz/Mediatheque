@@ -181,23 +181,26 @@ namespace Mediatheque.ViewModel
 
         /// Initialise un nouvel objet d'entraînement temporaire pour l'édition.
 
+
         public ICommand AjouterEntrainementCommand => new RelayCommand(() => {
-            var dateDefaut = (DateTime.Today >= _debutSemaine && DateTime.Today < _debutSemaine.AddDays(7))
-                             ? DateTime.Today : _debutSemaine;
+            // On prend la date du jour (ou du début de semaine si on est ailleurs)
+            DateTime jourBase = (DateTime.Now >= _debutSemaine && DateTime.Now < _debutSemaine.AddDays(7))
+                                ? DateTime.Today
+                                : _debutSemaine;
+
+            // On force 18h systématiquement pour le nouveau bouton
+            DateTime dateHeureFixe = jourBase.Date.AddHours(18);
 
             var e = new Entrainement
             {
-                Activite = "Nouvel entraînement",
-                DateHeure = dateDefaut.Date.AddHours(18),
+                Activite = "Nouvelle séance",
+                DateHeure = dateHeureFixe,
                 Lieu = "Gymnase",
                 DureeMinutes = 60,
-                // Assigne la première catégorie par défaut pour éviter le null
                 Categorie = Categories.FirstOrDefault()
             };
 
-            // On lie l'ID pour la DB
             if (e.Categorie != null) e.CategorieActiviteId = e.Categorie.Id;
-
             SelectionEntrainement = new EntrainementViewModel(e);
         });
 
@@ -212,7 +215,9 @@ namespace Mediatheque.ViewModel
             // On récupère le modèle qui est DÉJÀ dans le SelectionEntrainement
             var modele = SelectionEntrainement.Modele;
 
+            modele.Id = 0;
             _context.Entrainements.Add(modele);
+            System.Diagnostics.Debug.WriteLine($"DEBUG: Sauvegarde de l'activité à {SelectionEntrainement.DateHeure}");
             _context.SaveChanges(); // On sauvegarde tout de suite pour avoir l'ID
 
             Entrainements.Add(SelectionEntrainement); // On ajoute le VM existant
@@ -233,16 +238,42 @@ namespace Mediatheque.ViewModel
         });
 
         public ICommand SupprimerEntrainementCommand => new RelayCommand(() => {
+            // 1. Vérification de sécurité
             if (SelectionEntrainement == null || !_view.ConfirmationSuppression()) return;
 
-            var modele = SelectionEntrainement.Modele;
-            if (modele.Id != 0)
+            var vmASupprimer = SelectionEntrainement;
+            var modele = vmASupprimer.Modele;
+
+            try
             {
-                _context.Entrainements.Remove(modele);
-                _context.SaveChanges();
+                // 2. Si l'objet existe en base de données (Id != 0)
+                if (modele.Id != 0)
+                {
+                    // On récupère l'entité fraîchement depuis le contexte pour être sûr qu'elle existe
+                    var entityInDb = _context.Entrainements.Find(modele.Id);
+
+                    if (entityInDb != null)
+                    {
+                        _context.Entrainements.Remove(entityInDb);
+                        _context.SaveChanges();
+                    }
+                }
+
+                // 3. Mise à jour de l'interface (UI)
+                Entrainements.Remove(vmASupprimer);
+                SelectionEntrainement = null;
+
+                // Notifier la vue pour rafraîchir le planning graphique
+                NotifierChangementPlanning();
             }
-            Entrainements.Remove(SelectionEntrainement);
-            SelectionEntrainement = null;
+            catch (DbUpdateConcurrencyException)
+            {
+                // Si l'erreur arrive quand même (ex: supprimé par un autre processus entre temps)
+                // On retire simplement l'élément de la liste locale pour synchroniser l'affichage
+                Entrainements.Remove(vmASupprimer);
+                SelectionEntrainement = null;
+                NotifierChangementPlanning();
+            }
         });
 
         public bool SupprimerEntrainementActif => _selectionEntrainement != null;
@@ -251,44 +282,43 @@ namespace Mediatheque.ViewModel
         public ICommand DeplacerEntrainementPlusTardCommand => new RelayCommand(() => ModifierHeure(1));
         public ICommand DeplacerEntrainementPlusTotCommand => new RelayCommand(() => ModifierHeure(-1));
 
-        
+
         /// Modifie l'heure de début tout en respectant les limites de la plage horaire affichée.
-       
+
         private void ModifierHeure(int delta)
         {
             if (SelectionEntrainement == null) return;
 
-            var currentStart = SelectionEntrainement.DateHeure;
-            var newStart = currentStart.AddHours(delta);
+            // 1. Calculer le nouveau début potentiel
+            DateTime nouveauDebut = SelectionEntrainement.DateHeure.AddHours(delta);
 
-            var dayStartLimit = newStart.Date.AddHours(HEURE_DEBUT);
-            var dayEndLimit = newStart.Date.AddDays(1);
-            var durationMinutes = SelectionEntrainement.DureeMinutes;
-            var maxAllowedStart = dayEndLimit.AddMinutes(-durationMinutes);
+            // 2. Récupérer la date d'origine (le jour où la séance a commencé)
+            DateTime jourOrigine = SelectionEntrainement.DateHeure.Date;
 
-            if (dayStartLimit > maxAllowedStart)
+            // --- CAS A : On essaie de passer au lendemain (Heure >= 24:00) ---
+            if (nouveauDebut.Date > jourOrigine)
             {
-                SelectionEntrainement.DureeMinutes = Math.Max(0, (int)(dayEndLimit - dayStartLimit).TotalMinutes);
-                SelectionEntrainement.DateHeure = dayStartLimit;
                 _view.AlerteDepassementMinuit();
-                NotifierChangementPlanning();
                 return;
             }
 
-            // Si on essaie de déplacer avant 06:00, afficher un popup via la vue.
-            if (newStart < dayStartLimit)
+            // --- CAS B : On essaie de rester sur le même jour mais avant 06:00 ---
+            DateTime limiteOuverture = jourOrigine.AddHours(HEURE_DEBUT);
+            if (nouveauDebut < limiteOuverture)
             {
                 _view.AlerteAvantHeureDebut();
                 return;
             }
 
-            if (newStart > maxAllowedStart)
+            // 3. Si on passe les tests, on applique le changement
+            SelectionEntrainement.DateHeure = nouveauDebut;
+
+            // 4. Vérifier si la DURÉE (ex: 90min à 23h) fait déborder après minuit
+            if (ClampDurationToMidnight(SelectionEntrainement))
             {
                 _view.AlerteDepassementMinuit();
-                return;
             }
 
-            SelectionEntrainement.DateHeure = newStart;
             NotifierChangementPlanning();
         }
 

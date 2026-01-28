@@ -55,17 +55,23 @@ namespace Mediatheque.ViewModel
             get => _modele.DateHeure;
             set
             {
-                _modele.DateHeure = value;
-
-                // Sécurité : ajuste la durée si l'horaire est déplacé trop près de minuit
-                int maxMinutes = GetMinutesUntilMidnight(_modele.DateHeure);
-                if (_modele.DureeMinutes > maxMinutes)
+                if (_modele.DateHeure != value)
                 {
-                    _modele.DureeMinutes = maxMinutes;
-                    OnPropertyChanged(nameof(DureeMinutes));
-                }
+                    // On ne change l'heure que si la valeur entrante possède une heure (différente de 00:00)
+                    // Sinon, si c'est un DatePicker qui envoie minuit, on garde l'heure actuelle du modèle
+                    if (value.TimeOfDay == TimeSpan.Zero && _modele.DateHeure.TimeOfDay != TimeSpan.Zero)
+                    {
+                        _modele.DateHeure = value.Date.Add(_modele.DateHeure.TimeOfDay);
+                    }
+                    else
+                    {
+                        _modele.DateHeure = value;
+                    }
 
-                OnPropertyChanged(nameof(DateHeure), nameof(Description));
+                    OnPropertyChanged(nameof(DateHeure));
+                    // Très important pour mettre à jour le texte de description en même temps
+                    OnPropertyChanged(nameof(Description));
+                }
             }
         }
 
