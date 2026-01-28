@@ -7,9 +7,7 @@
 ---
 
 ## Note sur le projet
-Bien que l'application soit dédiée à la gestion d'entraînements sportifs, le projet conserve l'espace de noms technique **Mediatheque**. 
-
-Cela s'explique par l'utilisation de la structure technique et du modèle de données du TD "Médiathèque" comme socle de développement. Ce modèle a été adapté, refondu et étendu pour répondre aux besoins spécifiques de ce devoir maison, notamment pour la gestion complexe du calendrier et des séances de sport.
+Bien que l'application soit dédiée à la gestion d'entraînements sportifs, le projet conserve le nom Mediatheque. Cela est parce que nous avons utilisé la structure technique et le modèle de données du TD "Médiathèque” comme socle de développement. Ce modèle a ensuite été adapté et étendu pour répondre aux besoins spécifiques de ce devoir maison, notamment pour la gestion du calendrier et des séances de sport.
 
 ## Thème choisi
 Le projet est une application de gestion de planning sportif hebdomadaire du bureau des sports de Polytech Nancy. L'objectif est de permettre à un utilisateur de visualiser, d'organiser et de planifier les séances d'entraînements de manière ergonomique via une interface de calendrier dynamique et intuitive.
