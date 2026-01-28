@@ -7,8 +7,12 @@
         mc:Ignorable="d"
         Title="Médiathèque" Height="650" Width="1400"
         Closed="Window_Closed">
-    
-    
+
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+    </Window.Resources>
+
+
     <DockPanel Margin="6">
         <StackPanel Orientation="Horizontal" DockPanel.Dock="Top" HorizontalAlignment="Right">
             <Button Content="Semaine précédente" Command="{Binding SemainePrecedenteCommand}" Margin="4" Padding="8,4"/>
@@ -408,6 +412,8 @@
                                 <ComboBoxItem Content="Danse"/>
                                 <ComboBoxItem Content="Yoga"/>
                                 <ComboBoxItem Content="Musculation"/>
+                                <ComboBoxItem Content="Boxe"/>
+                                <ComboBoxItem Content="Karaté"/>
                             </ComboBox>
 
                             <!-- Catégorie d'entraînement -->
@@ -510,17 +516,39 @@
 
                             <!-- Boutons d'action -->
                             <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-                                
-                                <Button Content="+ Ajouter" 
-                                     Command="{Binding ValiderAjoutCommand}"
-                                       Background="green"
+
+                                <Button Content="+ Confirmer l'Ajout" 
+                                        Command="{Binding ValiderAjoutCommand}"
+                                        Visibility="{Binding ValiderAjoutActif, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                        Background="Green" 
                                         Foreground="White"
                                         Padding="12,8"
                                         Margin="0,0,8,0"
                                         BorderThickness="0"
                                         Cursor="Hand"/>
+
+                                <Button Content="Enregistrer les modifications" 
+                                        Command="{Binding TerminerEditionCommand}"
+                                        Visibility="{Binding EstEnModeEdition, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                        Background="DodgerBlue" 
+                                        Foreground="White" 
+                                        Padding="12,8"
+                                        Margin="0,0,8,0"
+                                        BorderThickness="0"
+                                        Cursor="Hand"/>
+
+                                <Button Content="Annuler" 
+                                        Command="{Binding AnnulerCommande}"
+                                        Background="#BAB6B5"
+                                        Foreground="White"
+                                        Padding="12,8"
+                                        Margin="0,0,8,0"
+                                        BorderThickness="0"
+                                        Cursor="Hand"/>
+                               
                                 <Button Content="🗑️ Supprimer" 
                                         Command="{Binding SupprimerEntrainementCommand}"
+                                        Visibility="{Binding SupprimerEntrainementActif, Converter={StaticResource BooleanToVisibilityConverter}}"  
                                         Background="#FFF44336"
                                         Foreground="White"
                                         Padding="12,8"

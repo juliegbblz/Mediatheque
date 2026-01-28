@@ -41,7 +41,7 @@ namespace Mediatheque.Data
                 new CategorieActivite { Id = 2, Nom = "Sport Collectif", CouleurHex = "#2ECC71" },
                 new CategorieActivite { Id = 3, Nom = "Bien-être", CouleurHex = "#9B59B6" },
                 new CategorieActivite { Id = 4, Nom = "Sport de combat", CouleurHex = "#3498DB" },
-                new CategorieActivite { Id = 5, Nom = "Compétition/tournoi", CouleurHex = "#FFEB3B" }
+                new CategorieActivite { Id = 5, Nom = "Compétition/tournoi", CouleurHex = "#E6B200" }
             );
 
             // Configuration de la relation un-à-plusieurs : un Entrainement appartient à une Categorie

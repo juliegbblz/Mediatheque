@@ -69,13 +69,19 @@ namespace Mediatheque.ViewModel
         public bool EstAujourdhuiDimanche => DateTime.Today == DateDimanche.Date;
 
         private EntrainementViewModel? _selectionEntrainement;
+
+        public bool EstEnModeEdition => SelectionEntrainement != null && Entrainements.Contains(SelectionEntrainement);
         public EntrainementViewModel? SelectionEntrainement
         {
             get => _selectionEntrainement;
             set
             {
                 _selectionEntrainement = value;
-                OnPropertyChanged(nameof(SelectionEntrainement), nameof(SupprimerEntrainementActif));
+                OnPropertyChanged(nameof(SelectionEntrainement));
+                OnPropertyChanged(nameof(ValiderAjoutActif));
+                OnPropertyChanged(nameof(EstEnModeEdition));
+                // On notifie que le bouton supprimer doit aussi changer d'état
+                OnPropertyChanged(nameof(SupprimerEntrainementActif));
             }
         }
 
@@ -202,7 +208,7 @@ namespace Mediatheque.ViewModel
 
             if (e.Categorie != null) e.CategorieActiviteId = e.Categorie.Id;
             SelectionEntrainement = new EntrainementViewModel(e);
-        });
+        }); 
 
 
         /// Enregistre l'entraînement créé dans la base de données et l'ajoute à la vue.
@@ -217,7 +223,6 @@ namespace Mediatheque.ViewModel
 
             modele.Id = 0;
             _context.Entrainements.Add(modele);
-            System.Diagnostics.Debug.WriteLine($"DEBUG: Sauvegarde de l'activité à {SelectionEntrainement.DateHeure}");
             _context.SaveChanges(); // On sauvegarde tout de suite pour avoir l'ID
 
             Entrainements.Add(SelectionEntrainement); // On ajoute le VM existant
@@ -225,7 +230,16 @@ namespace Mediatheque.ViewModel
             _view.InformationAjout();
         });
 
-        public bool ValiderAjoutActif => SelectionEntrainement != null && !Entrainements.Contains(SelectionEntrainement);
+        public bool ValiderAjoutActif
+        {
+            get
+            {
+                // Le bouton "Valider l'ajout" doit être visible si :
+                // 1. On a une sélection
+                // 2. ET que cette sélection n'existe pas encore dans la liste officielle
+                return SelectionEntrainement != null && !Entrainements.Contains(SelectionEntrainement);
+            }
+        }
 
         public ICommand TerminerEditionCommand => new RelayCommand(() => {
             if (SelectionEntrainement != null && Entrainements.Contains(SelectionEntrainement))
@@ -276,7 +290,7 @@ namespace Mediatheque.ViewModel
             }
         });
 
-        public bool SupprimerEntrainementActif => _selectionEntrainement != null;
+        public bool SupprimerEntrainementActif => EstEnModeEdition;
 
         // --- Déplacement rapide ---
         public ICommand DeplacerEntrainementPlusTardCommand => new RelayCommand(() => ModifierHeure(1));
@@ -348,5 +362,13 @@ namespace Mediatheque.ViewModel
             }
             return false;
         }
+
+        public ICommand AnnulerCommande => new RelayCommand(() =>
+        {
+            SelectionEntrainement = null;
+            // On notifie le planning pour qu'il recalcule les positions 
+            // et reprenne toute la largeur des colonnes
+            NotifierChangementPlanning();
+        });
     }
 }
